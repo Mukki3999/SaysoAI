@@ -220,6 +220,20 @@ enum DateText {
         return nil
     }
 
+    /// The next 8 days spelled out, so the model never has to work out which date "Saturday" is.
+    static func promptCalendar() -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = .current
+        f.dateFormat = "EEEE yyyy-MM-dd"
+        let cal = Calendar.current
+        return (0..<8).map { offset in
+            let d = cal.date(byAdding: .day, value: offset, to: .now)!
+            let label = offset == 0 ? "today" : offset == 1 ? "tomorrow" : ""
+            return "- \(f.string(from: d))" + (label.isEmpty ? "" : " (\(label))")
+        }.joined(separator: "\n")
+    }
+
     /// Prompt-friendly "now", e.g. "Friday, 2026-10-23 19:20 (America/New_York)".
     static func promptNow() -> String {
         let f = DateFormatter()

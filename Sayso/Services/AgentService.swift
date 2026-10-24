@@ -34,19 +34,20 @@ final class AgentService {
     /// Drops conversation context. Call after a plan is approved or cancelled.
     func resetConversation() { session = nil }
 
-    func respond(to transcript: String) async throws -> AgentOutcome {
+    /// `shownAs` is what the confirmation sheet displays when the prompt isn't what the user literally said.
+    func respond(to transcript: String, shownAs label: String? = nil) async throws -> AgentOutcome {
         await collector.reset()
         let session = self.session ?? makeSession()
         self.session = session
         do {
-            let response = try await session.respond(to: transcript)
+            let response = try await session.respond(to: transcript, options: GenerationOptions(temperature: 0.2))
             let actions = await collector.drain()
             if actions.isEmpty {
                 // No tool calls: the model is asking a question (or couldn't help).
                 return .question(response.content)
             }
             self.session = nil
-            return .plan(ActionPlan(actions: actions, transcript: transcript))
+            return .plan(ActionPlan(actions: actions, transcript: label ?? transcript))
         } catch let error as LanguageModelSession.ToolCallError {
             self.session = nil
             throw ToolError(error.underlyingError.localizedDescription)
@@ -75,13 +76,25 @@ final class AgentService {
     private func instructions() -> String {
         """
         You are Sayso, an assistant that turns spoken requests into device actions.
-        Now: \(DateText.promptNow()). Resolve words like "tomorrow" and "Friday at noon" against this date and time zone.
+        Now: \(DateText.promptNow()).
+        Upcoming days, use these exact dates:
+        \(DateText.promptCalendar())
+
         Rules:
-        - Always use tools to act. Never say you did something without calling a tool.
-        - One request can need several tool calls. Make all of them.
+        - Always call tools. Never say you did something without calling one.
+        - Split the request into every separate action and call a tool for each. Words like "and", "then", "also" usually mean another action.
+        - Pick the tool by meaning: "wake me" or a clock time to ring = setAlarm; "timer" or "in 10 minutes" = startTimer; "remind me" = createReminder; plans, meetings, meals, appointments = createCalendarEvent; "text" or "message" = draftMessage; "email" = draftEmail; "directions" or "take me to" = openDirections.
         - Write dates and times as local yyyy-MM-dd'T'HH:mm:ss.
-        - If a required detail is missing or ambiguous, ask one short clarifying question instead of guessing, and call no tools.
-        - Keep replies brief.
+        - Bare hours with no AM or PM: alarms 4 to 11 are AM. Events and reminders 1 to 6 are PM, 7 to 11 are AM unless the request says tonight, dinner or evening. 12 is noon.
+        - If the user gives no end time, leave end empty. Never invent locations, names or notes.
+        - Make sensible choices instead of asking. Ask one short clarifying question, with no tool calls, only when a required detail is truly missing, such as who to message or which day.
+        - Write message and email text in the user's voice, short and natural.
+        - After the tool calls, reply in one short sentence.
+
+        Example: "Dinner with Ankit Saturday at 8 at Nobu, remind me to book a table, and wake me at 6:30"
+        -> createCalendarEvent(Dinner with Ankit, Saturday 20:00, location Nobu); createReminder(Book a table); setAlarm(6:30).
+        Example: "Text Sam I'm 10 minutes late and take me to Blue Bottle"
+        -> draftMessage(Sam, "Running about 10 minutes late"); openDirections(Blue Bottle).
         """
     }
 

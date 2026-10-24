@@ -1,6 +1,7 @@
 import SwiftUI
 import MessageUI
 import Observation
+import PhotosUI
 
 enum TalkState: Equatable {
     case idle, listening, thinking
@@ -119,6 +120,33 @@ final class TalkViewModel {
     }
 
     func dismissError() { state = .idle }
+
+    /// Reads text from a shared photo on-device and turns it into actions.
+    func handlePhoto(_ item: PhotosPickerItem) async {
+        guard canStartTalking else { return }
+        state = .thinking
+        do {
+            guard let data = try await item.loadTransferable(type: Data.self) else { throw ImageTextError.unreadable }
+            let text = String(try await ImageTextReader.read(data).prefix(1800))
+            let firstLine = text.split(separator: "\n").first.map(String.init) ?? "your photo"
+            let prompt = """
+            The user shared a photo. This is the text on it:
+            \"\"\"
+            \(text)
+            \"\"\"
+            Create the calendar events, reminders and alarms it implies. For example, for a booking add the event and a reminder to leave beforehand.
+            """
+            switch try await agent.respond(to: prompt, shownAs: "Photo: \(firstLine.prefix(60))") {
+            case .question(let q): state = .question(q)
+            case .plan(let plan):
+                self.plan = plan
+                results = nil
+                state = .idle
+            }
+        } catch {
+            state = .error(Self.message(for: error))
+        }
+    }
 
     // MARK: Plan lifecycle
 

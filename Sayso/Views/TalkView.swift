@@ -1,15 +1,17 @@
+import PhotosUI
 import SwiftUI
 
 struct TalkView: View {
     @Bindable var model: TalkViewModel
     @State private var showSettings = false
+    @State private var pickedPhoto: PhotosPickerItem?
     @Environment(\.openURL) private var openURL
 
     private let examples = [
         "Remind me to call mom tomorrow at 6",
         "Set an alarm for 7 am on weekdays",
-        "Lunch with Sam Friday at noon",
-        "Start a 10 minute timer"
+        "Dinner with Ankit Saturday at 8, then remind me to book a table",
+        "Text Sam I'm late and take me to Blue Bottle"
     ]
 
     var body: some View {
@@ -22,14 +24,34 @@ struct TalkView: View {
                 Spacer(minLength: 0)
                 WaveView(mode: model.waveMode, level: model.speech.level)
                     .frame(height: 170)
-                micButton
-                    .padding(.top, 8)
+                HStack {
+                    PhotosPicker(selection: $pickedPhoto, matching: .images) {
+                        Image(systemName: "photo.on.rectangle.angled")
+                            .font(.title3).foregroundStyle(.primary)
+                            .frame(width: 52, height: 52)
+                            .background(Color.primary.opacity(0.07), in: Circle())
+                    }
+                    .accessibilityLabel("Plan from a photo")
+                    .opacity(model.state == .idle ? 1 : 0.3)
+                    .disabled(model.state != .idle)
+                    Spacer()
+                    micButton
+                    Spacer()
+                    Color.clear.frame(width: 52, height: 52)
+                }
+                .padding(.horizontal, 28)
+                .padding(.top, 8)
                 Text(model.caption)
                     .font(.footnote).foregroundStyle(.tertiary)
                     .frame(height: 20).padding(.top, 10).padding(.bottom, 18)
             }
         }
         .sheet(isPresented: $showSettings) { SettingsSheet() }
+        .onChange(of: pickedPhoto) { _, item in
+            guard let item else { return }
+            pickedPhoto = nil
+            Task { await model.handlePhoto(item) }
+        }
         .sheet(item: $model.plan) { plan in ConfirmationSheet(model: model, plan: plan) }
         .sheet(item: $model.messageRequest) { request in
             MessageComposer(request: request) { model.messageRequest = nil }.ignoresSafeArea()
