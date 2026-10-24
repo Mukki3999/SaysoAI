@@ -315,7 +315,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.sayso.app.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mukki.sayso.tests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Sayso.app/Sayso";
@@ -332,7 +332,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.sayso.app.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mukki.sayso.tests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Sayso.app/Sayso";
@@ -417,7 +417,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.sayso.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mukki.sayso;
 				PRODUCT_NAME = Sayso;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -495,7 +495,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.sayso.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mukki.sayso;
 				PRODUCT_NAME = Sayso;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;

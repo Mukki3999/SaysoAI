@@ -1,6 +1,6 @@
 name: Sayso
 options:
-  bundleIdPrefix: com.sayso
+  bundleIdPrefix: com.mukki
   deploymentTarget:
     iOS: "26.0"
 settings:
@@ -17,7 +17,7 @@ targets:
     sources: [Sayso]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.sayso.app
+        PRODUCT_BUNDLE_IDENTIFIER: com.mukki.sayso
         PRODUCT_NAME: Sayso
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: NO
@@ -45,7 +45,7 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
-        PRODUCT_BUNDLE_IDENTIFIER: com.sayso.app.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.mukki.sayso.tests
 schemes:
   Sayso:
     build:
