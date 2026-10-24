@@ -1,158 +1,137 @@
 import SwiftUI
 
-/// The idle screen: your day in one place, with the AI up front.
+/// The idle screen: your life in one place, with the AI up front.
 struct HomeView: View {
     @Bindable var model: TalkViewModel
+    @State private var filter: DayFilter = .today
     @Environment(\.openURL) private var openURL
 
     private var greeting: String {
+        let part: String
         switch Calendar.current.component(.hour, from: .now) {
-        case 5..<12: "Good morning"
-        case 12..<17: "Good afternoon"
-        case 17..<22: "Good evening"
-        default: "Good night"
+        case 5..<12: part = "Good morning"
+        case 12..<17: part = "Good afternoon"
+        case 17..<22: part = "Good evening"
+        default: part = "Good night"
         }
+        return "\(part) · \(Date.now.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))"
     }
 
-    private let suggestions = ["What's my day look like?", "What's on tomorrow?", "Am I free Saturday?"]
+    private var headline: String {
+        model.day.briefing ?? (model.day.items.isEmpty ? "Your AI is ready for your day." : "Here's your day.")
+    }
+
+    private var shown: [AgendaItem] { model.day.items(for: filter) }
+
     private let examples = [
         "Dinner with Ankit Saturday at 8, then remind me to book a table",
-        "Text Sam I'm late and take me to Blue Bottle",
-        "Wake me at 6:30 on weekdays"
+        "Wake me at 6:30 on weekdays",
+        "Text Sam I'm late and take me to Blue Bottle"
     ]
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(greeting).font(.system(size: 34, weight: .semibold, design: .rounded))
-                    Text(Date.now.formatted(.dateTime.weekday(.wide).month(.wide).day()))
-                        .font(.subheadline).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(greeting.uppercased()).font(.caption.weight(.semibold)).tracking(1.1)
+                        .foregroundStyle(.white.opacity(0.45))
+                    Text(headline)
+                        .font(.system(size: 29, weight: .medium, design: .serif).italic())
+                        .foregroundStyle(.white)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .contentTransition(.opacity)
                 }
+                .padding(.top, 6)
+
+                pills
+
+                VStack(alignment: .leading, spacing: 14) {
+                    Text(sectionTitle).font(.title3).foregroundStyle(.white)
+                    if shown.isEmpty {
+                        emptyCard
+                    } else {
+                        ForEach(Array(shown.enumerated()), id: \.element.id) { index, item in
+                            AgendaCard(item: item, featured: index == 0, stacked: index == 0 && shown.count > 1)
+                                .padding(.top, index == 0 && shown.count > 1 ? 20 : 0)
+                                .staggerIn(index)
+                        }
+                    }
+                }
+                .id(filter)
+
                 switch model.day.access {
-                case .granted: granted
+                case .granted: EmptyView()
                 case .notAsked: connectCard
                 case .denied: deniedCard
                 }
-                if model.day.access != .granted || model.day.items.isEmpty { tryRow }
             }
-            .padding(.horizontal, 24).padding(.top, 4).padding(.bottom, 16)
+            .padding(.horizontal, 22).padding(.bottom, 30)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .scrollIndicators(.hidden)
+        .mask(LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.93),
+                                     .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom))
     }
 
-    // MARK: Granted
-
-    @ViewBuilder
-    private var granted: some View {
-        if let briefing = model.day.briefing {
-            HStack(alignment: .top, spacing: 10) {
-                Image(systemName: "sparkles").font(.body.weight(.semibold)).padding(.top, 3)
-                Text(briefing).font(.title3).fixedSize(horizontal: false, vertical: true)
-            }
-            .transition(.opacity)
+    private var sectionTitle: String {
+        switch filter {
+        case .today: shown.contains { $0.start == nil || $0.start! >= .now } ? "Up next" : "Today"
+        case .tomorrow: "Tomorrow"
+        case .upcoming: "Coming up"
         }
-        ScrollView(.horizontal) {
-            HStack(spacing: 8) {
-                ForEach(suggestions, id: \.self) { text in
-                    Button { Task { await model.ask(text) } } label: {
-                        Text(text).font(.subheadline)
-                            .padding(.horizontal, 14).padding(.vertical, 9)
-                            .overlay(Capsule().strokeBorder(Color.primary.opacity(0.18)))
-                    }
-                    .buttonStyle(.plain)
+    }
+
+    private var pills: some View {
+        HStack(spacing: 8) {
+            ForEach(DayFilter.allCases) { f in
+                Button { withAnimation(.smooth) { filter = f } } label: {
+                    Text(f.rawValue).font(.subheadline.weight(.medium))
+                        .foregroundStyle(filter == f ? .black : .white)
+                        .padding(.horizontal, 18).padding(.vertical, 11)
+                        .background(filter == f ? Color.white : Color.white.opacity(0.12), in: Capsule())
                 }
-            }
-            .padding(.horizontal, 24)
-        }
-        .scrollIndicators(.hidden)
-        .padding(.horizontal, -24)
-
-        ForEach(model.day.sections) { section in
-            VStack(alignment: .leading, spacing: 10) {
-                Text(section.title.uppercased()).font(.caption.weight(.semibold)).tracking(1)
-                    .foregroundStyle(.secondary)
-                if section.items.isEmpty {
-                    Text("Nothing planned").font(.subheadline).foregroundStyle(.tertiary)
-                }
-                ForEach(section.items) { item in row(item) }
+                .buttonStyle(.plain)
             }
         }
     }
 
-    private func row(_ item: AgendaItem) -> some View {
-        let past = item.kind == .event && (item.end ?? .distantFuture) < .now
-        return HStack(alignment: .top, spacing: 14) {
-            Text(timeLabel(item)).font(.caption.weight(.medium)).foregroundStyle(.secondary)
-                .frame(width: 66, alignment: .trailing).padding(.top, 14)
-            HStack(spacing: 12) {
-                icon(item)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.title).font(.body.weight(.medium)).lineLimit(2)
-                    if !item.detail.isEmpty { Text(item.detail).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 14).padding(.vertical, 12)
-            .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    private var emptyCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Nothing here yet").font(.headline).foregroundStyle(.white)
+            Text("Tap the mic and try").font(.subheadline).foregroundStyle(.white.opacity(0.5))
+            Text("“\(examples[Calendar.current.component(.minute, from: .now) % examples.count])”")
+                .font(.system(size: 20, design: .serif).italic()).foregroundStyle(.white.opacity(0.85))
         }
-        .opacity(past ? 0.4 : 1)
+        .padding(20).frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
     }
-
-    @ViewBuilder
-    private func icon(_ item: AgendaItem) -> some View {
-        switch item.kind {
-        case .event: Image(systemName: "calendar").foregroundStyle(.secondary)
-        case .reminder: Image(systemName: "circle").foregroundStyle(.secondary)
-        case .alarm: Image(systemName: item.start == nil ? "timer" : "alarm").foregroundStyle(.secondary)
-        }
-    }
-
-    private func timeLabel(_ item: AgendaItem) -> String {
-        guard let start = item.start else { return "Now" }
-        if item.kind == .reminder, start < Calendar.current.startOfDay(for: .now) { return "Overdue" }
-        if item.allDay { return item.kind == .reminder ? "Due" : "All day" }
-        return start.formatted(date: .omitted, time: .shortened)
-    }
-
-    // MARK: Not connected
 
     private var connectCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label("Your day, in one place", systemImage: "sparkles").font(.headline)
-            Text("Sayso can show your calendar, reminders and alarms here, and answer questions like “what's on tomorrow?”. It all stays on your iPhone.")
-                .font(.subheadline).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 10) {
+            Label("See your whole calendar here", systemImage: "sparkles").font(.headline)
+            Text("Connect Calendar and Reminders to see everything in one place, and ask “what's on tomorrow?”. It all stays on your iPhone.")
+                .font(.subheadline).foregroundStyle(.white.opacity(0.6))
             Button { Task { await model.connectDay() } } label: {
-                Text("Show my day").font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color(.systemBackground))
-                    .padding(.horizontal, 18).padding(.vertical, 10)
-                    .background(Color.primary, in: Capsule())
+                Text("Connect").font(.subheadline.weight(.semibold)).foregroundStyle(.black)
+                    .padding(.horizontal, 20).padding(.vertical, 10).background(.white, in: Capsule())
             }
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .foregroundStyle(.white)
+        .padding(20).frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
     }
 
     private var deniedCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             Text("Calendar access is off").font(.headline)
-            Text("Turn it on in Settings to see your day here.").font(.subheadline).foregroundStyle(.secondary)
-            Button("Open Settings") {
-                if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+            Text("Turn it on in Settings to see your whole day here.").font(.subheadline).foregroundStyle(.white.opacity(0.6))
+            Button { if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) } } label: {
+                Text("Open Settings").font(.subheadline.weight(.semibold)).foregroundStyle(.black)
+                    .padding(.horizontal, 20).padding(.vertical, 10).background(.white, in: Capsule())
             }
-            .buttonStyle(.bordered).tint(.primary)
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-    }
-
-    private var tryRow: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Try saying").font(.footnote).foregroundStyle(.tertiary)
-            ForEach(examples, id: \.self) { Text("“\($0)”").font(.subheadline).foregroundStyle(.secondary) }
-        }
+        .foregroundStyle(.white)
+        .padding(20).frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
     }
 }

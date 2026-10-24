@@ -85,6 +85,17 @@ enum AgendaReader {
         return items
     }
 
+    /// Next time a clock alarm rings, honouring weekly repeats. Used for alarms Sayso set.
+    static func nextFire(hour: Int, minute: Int, days: [Locale.Weekday], after date: Date) -> Date? {
+        let cal = Calendar.current
+        var comps = DateComponents(hour: hour, minute: minute)
+        guard !days.isEmpty else { return cal.nextDate(after: date, matching: comps, matchingPolicy: .nextTime) }
+        return days.compactMap { day -> Date? in
+            comps.weekday = weekdayNumber(day)
+            return cal.nextDate(after: date, matching: comps, matchingPolicy: .nextTime)
+        }.min()
+    }
+
     private static func nextFire(of schedule: Alarm.Schedule, after date: Date) -> Date? {
         let cal = Calendar.current
         switch schedule {

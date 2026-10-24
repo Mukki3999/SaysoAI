@@ -45,7 +45,8 @@ struct SaysoApp: App {
                         .task { Self.loadDemoPlanIfRequested(model) }
                 }
             }
-            .tint(.primary)
+            .tint(.white)
+            .preferredColorScheme(.dark)
         }
     }
 }

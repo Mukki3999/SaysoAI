@@ -15,9 +15,16 @@ enum TalkState: Equatable {
 final class TalkViewModel {
     let speech = SpeechService()
     let agent = AgentService()
+    let life: LifeStore
+    let day: DayStore
+
+    init() {
+        let life = LifeStore()
+        self.life = life
+        day = DayStore(life: life)
+    }
 
     private(set) var state: TalkState = .idle
-    let day = DayStore()
     private(set) var spoken = ""
     var plan: ActionPlan?
     private(set) var results: [ActionResult]?
@@ -160,6 +167,7 @@ final class TalkViewModel {
         let approved = plan.approve()
         let ran = await executor.run(approved)
         results = ran
+        life.add(ran.filter { if case .failed = $0.outcome { false } else { true } }.map(\.action))
         isExecuting = false
         if ran.count == 1, case .ready(let deferred) = ran[0].outcome {
             performDeferred(deferred, resultID: ran[0].id)
@@ -193,7 +201,9 @@ final class TalkViewModel {
         guard let i = results?.firstIndex(where: { $0.id == id }),
               case .completed(let undo?) = results?[i].outcome else { return }
         do {
+            let actionID = results?[i].action.id
             try await undo()
+            if let actionID { life.remove(actionID) }
             results?.remove(at: i)
             Task { await refreshDay() }
         } catch {

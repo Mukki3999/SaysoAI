@@ -33,7 +33,7 @@ struct ActionCardBody: View {
 
 // MARK: - Pieces
 
-private struct Chip: View {
+struct Chip: View {
     let symbol: String
     let text: String
     var body: some View {
@@ -211,8 +211,9 @@ private struct EmailPreview: View {
     }
 }
 
-private struct DirectionsPreview: View {
+struct DirectionsPreview: View {
     let d: DirectionsDraft
+    var caption = "Driving directions in Maps"
     @State private var coordinate: CLLocationCoordinate2D?
     @State private var name: String?
 
@@ -231,7 +232,7 @@ private struct DirectionsPreview: View {
                 .frame(height: 90).frame(maxHeight: .infinity, alignment: .bottom)
             VStack(alignment: .leading, spacing: 2) {
                 Text(name ?? d.destination).font(.headline).foregroundStyle(.white).lineLimit(1)
-                Text("Driving directions in Maps").font(.caption).foregroundStyle(.white.opacity(0.8))
+                Text(caption).font(.caption).foregroundStyle(.white.opacity(0.8))
             }
             .padding(14)
         }

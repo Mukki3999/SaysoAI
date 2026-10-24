@@ -3,7 +3,7 @@ import Observation
 
 // MARK: - Drafts (editable fields shown on the confirmation sheet)
 
-struct CalendarEventDraft: Equatable, Sendable {
+struct CalendarEventDraft: Equatable, Sendable, Codable {
     var title: String
     var start: Date
     var end: Date?
@@ -11,44 +11,44 @@ struct CalendarEventDraft: Equatable, Sendable {
     var notes: String
 }
 
-struct ReminderDraft: Equatable, Sendable {
+struct ReminderDraft: Equatable, Sendable, Codable {
     var title: String
     var due: Date?
     var place: String          // empty = no location trigger
     var arriving: Bool
 }
 
-struct AlarmDraft: Equatable, Sendable {
+struct AlarmDraft: Equatable, Sendable, Codable {
     var label: String
     var hour: Int
     var minute: Int
     var repeatDays: [Locale.Weekday]
 }
 
-struct TimerDraft: Equatable, Sendable {
+struct TimerDraft: Equatable, Sendable, Codable {
     var seconds: Int
     var label: String
 }
 
-struct MessageDraft: Equatable, Sendable {
+struct MessageDraft: Equatable, Sendable, Codable {
     var recipient: String
     var body: String
 }
 
-struct EmailDraft: Equatable, Sendable {
+struct EmailDraft: Equatable, Sendable, Codable {
     var recipient: String
     var subject: String
     var body: String
 }
 
-struct DirectionsDraft: Equatable, Sendable {
+struct DirectionsDraft: Equatable, Sendable, Codable {
     var destination: String
 }
 
 // MARK: - Proposed action
 
-struct ProposedAction: Identifiable, Equatable, Sendable {
-    enum Payload: Equatable, Sendable {
+struct ProposedAction: Identifiable, Equatable, Sendable, Codable {
+    enum Payload: Equatable, Sendable, Codable {
         case calendar(CalendarEventDraft)
         case reminder(ReminderDraft)
         case alarm(AlarmDraft)
@@ -58,7 +58,7 @@ struct ProposedAction: Identifiable, Equatable, Sendable {
         case directions(DirectionsDraft)
     }
 
-    let id = UUID()
+    var id = UUID()
     var payload: Payload
 
     var kindLabel: String {
