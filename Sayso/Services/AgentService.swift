@@ -3,7 +3,8 @@ import Observation
 
 enum AgentOutcome {
     case plan(ActionPlan)
-    case question(String)
+    case question(String)   // the model needs one more detail
+    case answer(String)     // a reply to a question about the user's day
 }
 
 @MainActor @Observable
@@ -31,6 +32,15 @@ final class AgentService {
         }
     }
 
+    /// One friendly sentence about the user's day. Nil if the model isn't available or fails.
+    func briefing(for agenda: String) async -> String? {
+        guard isModelAvailable else { return nil }
+        let session = LanguageModelSession(model: model, instructions: "You write a one-sentence briefing from the user's schedule. Max 22 words, warm and plain, no emojis, no lists. Mention the most important or next thing.")
+        guard let reply = try? await session.respond(to: agenda, options: GenerationOptions(temperature: 0.3)) else { return nil }
+        let text = reply.content.trimmingCharacters(in: .whitespacesAndNewlines)
+        return text.isEmpty ? nil : text
+    }
+
     /// Drops conversation context. Call after a plan is approved or cancelled.
     func resetConversation() { session = nil }
 
@@ -43,8 +53,11 @@ final class AgentService {
             let response = try await session.respond(to: transcript, options: GenerationOptions(temperature: 0.2))
             let actions = await collector.drain()
             if actions.isEmpty {
-                // No tool calls: the model is asking a question (or couldn't help).
-                return .question(response.content)
+                // No actions queued: either a clarifying question or an answer about the user's day.
+                let text = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+                if text.hasSuffix("?") { return .question(text) }
+                self.session = nil
+                return .answer(text)
             }
             self.session = nil
             return .plan(ActionPlan(actions: actions, transcript: label ?? transcript))
@@ -69,7 +82,8 @@ final class AgentService {
             StartTimerTool(collector: collector),
             DraftMessageTool(collector: collector),
             DraftEmailTool(collector: collector),
-            OpenDirectionsTool(collector: collector)
+            OpenDirectionsTool(collector: collector),
+            GetAgendaTool()
         ]
     }
 
@@ -87,6 +101,7 @@ final class AgentService {
         - Write dates and times as local yyyy-MM-dd'T'HH:mm:ss.
         - Bare hours with no AM or PM: alarms 4 to 11 are AM. Events and reminders 1 to 6 are PM, 7 to 11 are AM unless the request says tonight, dinner or evening. 12 is noon.
         - If the user gives no end time, leave end empty. Never invent locations, names or notes.
+        - Questions about the user's schedule ("what's on tomorrow", "am I free Saturday"): call getAgenda for each day asked, then answer in one or two short sentences. Do not call action tools for questions.
         - Make sensible choices instead of asking. Ask one short clarifying question, with no tool calls, only when a required detail is truly missing, such as who to message or which day.
         - Write message and email text in the user's voice, short and natural.
         - After the tool calls, reply in one short sentence.

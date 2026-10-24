@@ -6,24 +6,22 @@ struct TalkView: View {
     @State private var showSettings = false
     @State private var pickedPhoto: PhotosPickerItem?
     @Environment(\.openURL) private var openURL
-
-    private let examples = [
-        "Remind me to call mom tomorrow at 6",
-        "Set an alarm for 7 am on weekdays",
-        "Dinner with Ankit Saturday at 8, then remind me to book a table",
-        "Text Sam I'm late and take me to Blue Bottle"
-    ]
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         ZStack {
             Color(.systemBackground).ignoresSafeArea()
             VStack(spacing: 0) {
                 topBar
-                Spacer(minLength: 0)
-                centerText
-                Spacer(minLength: 0)
+                if model.state == .idle {
+                    HomeView(model: model).transition(.opacity)
+                } else {
+                    Spacer(minLength: 0)
+                    centerText
+                    Spacer(minLength: 0)
+                }
                 WaveView(mode: model.waveMode, level: model.speech.level)
-                    .frame(height: 170)
+                    .frame(height: 120)
                 HStack {
                     PhotosPicker(selection: $pickedPhoto, matching: .images) {
                         Image(systemName: "photo.on.rectangle.angled")
@@ -45,6 +43,11 @@ struct TalkView: View {
                     .font(.footnote).foregroundStyle(.tertiary)
                     .frame(height: 20).padding(.top, 10).padding(.bottom, 18)
             }
+        }
+        .animation(.smooth, value: model.state == .idle)
+        .task { await model.refreshDay() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await model.refreshDay() } }
         }
         .sheet(isPresented: $showSettings) { SettingsSheet() }
         .onChange(of: pickedPhoto) { _, item in
@@ -83,23 +86,20 @@ struct TalkView: View {
         VStack(spacing: 14) {
             switch model.state {
             case .idle:
-                if model.recent.isEmpty {
-                    Text("Try saying…").font(.footnote).foregroundStyle(.tertiary)
-                    ForEach(examples, id: \.self) { phrase in
-                        Text("“\(phrase)”").font(.body).foregroundStyle(.secondary)
-                    }
-                } else {
-                    recentList
-                }
+                EmptyView()
             case .listening:
                 Text(model.speech.transcript.isEmpty ? "Listening…" : model.speech.transcript)
                     .font(.system(size: 28, weight: .regular))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(model.speech.transcript.isEmpty ? .tertiary : .primary)
             case .thinking:
-                Text(model.speech.transcript).font(.title3).foregroundStyle(.secondary)
+                Text(model.spoken).font(.title3).foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                 Text("Thinking…").font(.footnote).foregroundStyle(.tertiary)
+            case .answer(let a):
+                Image(systemName: "sparkles").font(.title2)
+                Text(a).font(.title3).multilineTextAlignment(.center)
+                Button("Done") { model.dismissError() }.buttonStyle(.bordered).tint(.primary).padding(.top, 4)
             case .question(let q):
                 Text(q).font(.title3).multilineTextAlignment(.center)
                 Text("Hold to answer").font(.footnote).foregroundStyle(.tertiary)
@@ -117,21 +117,6 @@ struct TalkView: View {
         }
         .padding(.horizontal, 32)
         .animation(.smooth, value: model.state)
-    }
-
-    private var recentList: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Recent").font(.footnote).foregroundStyle(.tertiary)
-            ForEach(model.recent.prefix(4)) { item in
-                HStack(spacing: 10) {
-                    Image(systemName: item.symbol).frame(width: 22).foregroundStyle(.secondary)
-                    Text(item.title).lineLimit(1)
-                    Spacer()
-                }
-                .font(.subheadline)
-            }
-        }
-        .frame(maxWidth: 340)
     }
 
     private var micButton: some View {

@@ -6,6 +6,7 @@ import PhotosUI
 enum TalkState: Equatable {
     case idle, listening, thinking
     case question(String)
+    case answer(String)
     case done(String)
     case error(String)
 }
@@ -16,7 +17,8 @@ final class TalkViewModel {
     let agent = AgentService()
 
     private(set) var state: TalkState = .idle
-    private(set) var recent: [RecentAction] = []
+    let day = DayStore()
+    private(set) var spoken = ""
     var plan: ActionPlan?
     private(set) var results: [ActionResult]?
     private(set) var isExecuting = false
@@ -124,6 +126,7 @@ final class TalkViewModel {
     /// Reads text from a shared photo on-device and turns it into actions.
     func handlePhoto(_ item: PhotosPickerItem) async {
         guard canStartTalking else { return }
+        spoken = "Reading your photo…"
         state = .thinking
         do {
             guard let data = try await item.loadTransferable(type: Data.self) else { throw ImageTextError.unreadable }
@@ -138,6 +141,7 @@ final class TalkViewModel {
             """
             switch try await agent.respond(to: prompt, shownAs: "Photo: \(firstLine.prefix(60))") {
             case .question(let q): state = .question(q)
+            case .answer(let a): state = .answer(a)
             case .plan(let plan):
                 self.plan = plan
                 results = nil
@@ -161,13 +165,10 @@ final class TalkViewModel {
             performDeferred(deferred, resultID: ran[0].id)
         }
         UINotificationFeedbackGenerator().notificationOccurred(.success)
-        for r in ran {
-            if case .failed = r.outcome { continue }
-            recent.insert(RecentAction(title: r.title, symbol: r.symbol), at: 0)
-        }
     }
 
     func cancelPlan() {
+        Task { await refreshDay() }
         plan = nil
         results = nil
         agent.resetConversation()
@@ -175,6 +176,7 @@ final class TalkViewModel {
     }
 
     func closePlan() {
+        Task { await refreshDay() }
         let created = results?.filter { if case .failed = $0.outcome { false } else { true } }.count ?? 0
         plan = nil
         results = nil
@@ -191,10 +193,9 @@ final class TalkViewModel {
         guard let i = results?.firstIndex(where: { $0.id == id }),
               case .completed(let undo?) = results?[i].outcome else { return }
         do {
-            let title = results?[i].title
             try await undo()
             results?.remove(at: i)
-            recent.removeAll { $0.title == title }
+            Task { await refreshDay() }
         } catch {
             results?[i].outcome = .failed("Couldn't undo. Remove it in the \(results?[i].symbol == "calendar" ? "Calendar" : "system") app.", needsSettings: false)
         }
@@ -242,8 +243,34 @@ final class TalkViewModel {
 
     private var canStartTalking: Bool {
         switch state {
-        case .idle, .done, .question: true
+        case .idle, .done, .question, .answer: true
         case .listening, .thinking, .error: false
+        }
+    }
+
+    func refreshDay() async { await day.refresh(agent: agent) }
+    func connectDay() async { await day.connect(agent: agent) }
+
+    /// Tappable suggestion: same path as speech.
+    func ask(_ text: String) async {
+        guard canStartTalking else { return }
+        await process(text)
+    }
+
+    private func process(_ text: String) async {
+        spoken = text
+        state = .thinking
+        do {
+            switch try await agent.respond(to: text) {
+            case .question(let q): state = .question(q)
+            case .answer(let a): state = .answer(a)
+            case .plan(let plan):
+                self.plan = plan
+                results = nil
+                state = .idle
+            }
+        } catch {
+            state = .error(Self.message(for: error))
         }
     }
 
@@ -257,16 +284,6 @@ final class TalkViewModel {
             state = .error("Didn't catch that.")
             return
         }
-        do {
-            switch try await agent.respond(to: text) {
-            case .question(let q): state = .question(q)
-            case .plan(let plan):
-                self.plan = plan
-                results = nil
-                state = .idle
-            }
-        } catch {
-            state = .error(Self.message(for: error))
-        }
+        await process(text)
     }
 }

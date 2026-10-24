@@ -24,6 +24,8 @@
 	<false/>
 	<key>NSAlarmKitUsageDescription</key>
 	<string>Sayso sets alarms and timers when you ask it to, so they ring like any other alarm on your iPhone.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Sayso shows today's events on your home screen and answers questions about your schedule. Your calendar stays on your iPhone.</string>
 	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
 	<string>Sayso adds events to your calendar when you ask it to. It can only add events, not read your existing ones.</string>
 	<key>NSContactsUsageDescription</key>
