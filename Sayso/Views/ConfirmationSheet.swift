@@ -7,17 +7,34 @@ struct ConfirmationSheet: View {
     @Environment(\.openURL) private var openURL
 
     var body: some View {
-        VStack(spacing: 0) {
-            if let results = model.results {
-                doneContent(results)
-            } else {
-                reviewContent
+        ZStack {
+            Color.black.ignoresSafeArea()
+            VStack(spacing: 0) {
+                if let results = model.results { doneHeader(results) } else { reviewHeader }
+                ScrollView {
+                    VStack(spacing: 14) {
+                        if let results = model.results {
+                            ForEach(Array(results.enumerated()), id: \.element.id) { i, r in
+                                resultCard(r).staggerIn(i)
+                            }
+                        } else {
+                            ForEach(Array(plan.actions.enumerated()), id: \.element.id) { i, a in
+                                Button { editing = a } label: { reviewCard(a) }
+                                    .buttonStyle(CardPressStyle())
+                                    .staggerIn(i)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 16).padding(.top, 6).padding(.bottom, 12)
+                }
+                footer
             }
         }
-        .padding(.top, 24)
-        .background(Color(.systemBackground))
-        .presentationDetents([.medium, .large])
+        .preferredColorScheme(.dark)
+        .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+        .presentationBackground(.black)
+        .presentationCornerRadius(36)
         .interactiveDismissDisabled(model.isExecuting)
         .sheet(item: $editing) { action in
             ActionEditor(action: action,
@@ -26,129 +43,140 @@ struct ConfirmationSheet: View {
         }
     }
 
-    // MARK: Review
+    // MARK: Headers
 
-    private var reviewContent: some View {
-        VStack(spacing: 16) {
-            VStack(spacing: 6) {
-                Text("Here's what I'll do").font(.title3.weight(.semibold))
-                Text("“\(plan.transcript)”").font(.footnote).foregroundStyle(.secondary)
-                    .lineLimit(2).multilineTextAlignment(.center)
+    private var reviewHeader: some View {
+        VStack(spacing: 8) {
+            Text("YOU SAID").font(.caption.weight(.semibold)).tracking(1.2).foregroundStyle(.white.opacity(0.45))
+            Text("“\(plan.transcript)”")
+                .font(.title3.weight(.medium)).foregroundStyle(.white)
+                .multilineTextAlignment(.center).lineLimit(3)
+            Text(plan.actions.count > 1 ? "\(plan.actions.count) things to do · tap a card to edit" : "Tap the card to edit")
+                .font(.footnote).foregroundStyle(.white.opacity(0.5)).padding(.top, 2)
+        }
+        .padding(.horizontal, 28).padding(.top, 34).padding(.bottom, 18)
+    }
+
+    private func doneHeader(_ results: [ActionResult]) -> some View {
+        let failed = results.filter { if case .failed = $0.outcome { true } else { false } }.count
+        return VStack(spacing: 10) {
+            Image(systemName: failed == results.count ? "exclamationmark.circle" : "checkmark.circle.fill")
+                .font(.system(size: 44, weight: .light)).foregroundStyle(.white)
+                .symbolEffect(.bounce, value: results.count)
+            Text(failed == 0 ? "All set" : failed == results.count ? "Couldn't finish" : "Mostly done")
+                .font(.title2.weight(.semibold)).foregroundStyle(.white)
+        }
+        .padding(.top, 38).padding(.bottom, 18)
+    }
+
+    // MARK: Cards
+
+    private func reviewCard(_ action: ProposedAction) -> some View {
+        ActionCardBody(action: action)
+            .padding(20)
+            .background(.white, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+            .overlay(alignment: .topTrailing) {
+                Image(systemName: "pencil").font(.caption.weight(.bold)).foregroundStyle(.black.opacity(0.4))
+                    .frame(width: 30, height: 30).padding(14)
             }
-            .padding(.horizontal, 24)
+    }
 
-            ScrollView {
-                VStack(spacing: 10) {
-                    ForEach(plan.actions) { action in
-                        Button { editing = action } label: { card(action) }
-                            .buttonStyle(.plain)
+    private func resultCard(_ r: ActionResult) -> some View {
+        VStack(spacing: 0) {
+            ActionCardBody(action: r.action).padding(20)
+            Divider()
+            statusBar(r).padding(.horizontal, 20).padding(.vertical, 12)
+        }
+        .background(.white, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+    }
+
+    private func statusBar(_ r: ActionResult) -> some View {
+        HStack(spacing: 10) {
+            switch r.outcome {
+            case .completed(let undo):
+                Label(Self.doneText(r.action), systemImage: "checkmark.circle.fill")
+                    .font(.subheadline.weight(.medium)).foregroundStyle(.black)
+                Spacer()
+                if undo != nil { pill("Undo") { Task { await model.undo(r.id) } } }
+            case .ready(let deferred):
+                Label(Self.readyText(deferred), systemImage: "arrow.up.forward.circle")
+                    .font(.subheadline.weight(.medium)).foregroundStyle(.black)
+                Spacer()
+                pill(Self.readyButton(deferred)) { model.performDeferred(deferred, resultID: r.id) }
+            case .failed(let message, let needsSettings):
+                Label(message, systemImage: "exclamationmark.circle.fill")
+                    .font(.footnote).foregroundStyle(.black.opacity(0.7)).lineLimit(3)
+                Spacer(minLength: 8)
+                if needsSettings {
+                    pill("Settings") {
+                        if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                     }
                 }
-                .padding(.horizontal, 20)
-            }
-
-            VStack(spacing: 10) {
-                Button { Task { await model.approve() } } label: {
-                    Group {
-                        if model.isExecuting { ProgressView().tint(Color(.systemBackground)) }
-                        else { Text(plan.actions.count > 1 ? "Approve all" : "Approve") }
-                    }
-                    .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 16)
-                }
-                .buttonStyle(.borderedProminent).tint(.primary)
-                .foregroundStyle(Color(.systemBackground))
-                .clipShape(Capsule())
-                .disabled(model.isExecuting)
-
-                Button("Cancel", role: .cancel) { model.cancelPlan() }
-                    .foregroundStyle(.secondary)
-                    .disabled(model.isExecuting)
-            }
-            .padding(.horizontal, 24).padding(.bottom, 12)
-        }
-    }
-
-    private func card(_ action: ProposedAction) -> some View {
-        HStack(spacing: 14) {
-            Image(systemName: action.symbol).font(.title3).frame(width: 28)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(action.kindLabel).font(.caption).foregroundStyle(.secondary)
-                Text(action.summary).font(.body).multilineTextAlignment(.leading)
-            }
-            Spacer(minLength: 0)
-            Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
-        }
-        .padding(16)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .contentShape(Rectangle())
-    }
-
-    // MARK: Done
-
-    private func doneContent(_ results: [ActionResult]) -> some View {
-        VStack(spacing: 16) {
-            Text("Done").font(.title3.weight(.semibold))
-            ScrollView {
-                VStack(spacing: 10) {
-                    ForEach(results) { result in resultRow(result) }
-                }
-                .padding(.horizontal, 20)
-            }
-            Button("Close") { model.closePlan() }
-                .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 16)
-                .background(Color.primary, in: Capsule())
-                .foregroundStyle(Color(.systemBackground))
-                .padding(.horizontal, 24).padding(.bottom, 12)
-        }
-    }
-
-    private func resultRow(_ result: ActionResult) -> some View {
-        HStack(spacing: 14) {
-            Image(systemName: icon(for: result)).font(.title3).frame(width: 28)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(result.title).font(.body)
-                if case .failed(let message, _) = result.outcome {
-                    Text(message).font(.caption).foregroundStyle(.secondary)
-                }
-            }
-            Spacer(minLength: 0)
-            rowAction(result)
-        }
-        .padding(16)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-    }
-
-    private func icon(for result: ActionResult) -> String {
-        switch result.outcome {
-        case .completed: "checkmark.circle"
-        case .ready: result.symbol
-        case .failed: "exclamationmark.circle"
-        }
-    }
-
-    @ViewBuilder
-    private func rowAction(_ result: ActionResult) -> some View {
-        switch result.outcome {
-        case .completed(let undo):
-            if undo != nil {
-                Button("Undo") { Task { await model.undo(result.id) } }.buttonStyle(.bordered).tint(.primary)
-            }
-        case .ready(let deferred):
-            Button(deferredLabel(deferred)) { model.performDeferred(deferred, resultID: result.id) }
-                .buttonStyle(.bordered).tint(.primary)
-        case .failed(_, let needsSettings):
-            if needsSettings {
-                Button("Open Settings") {
-                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
-                }.buttonStyle(.bordered).tint(.primary)
             }
         }
     }
 
-    private func deferredLabel(_ d: DeferredAction) -> String {
+    private func pill(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
+                .padding(.horizontal, 16).padding(.vertical, 8).background(.black, in: Capsule())
+        }
+        .buttonStyle(CardPressStyle())
+    }
+
+    private static func doneText(_ a: ProposedAction) -> String {
+        switch a.payload {
+        case .calendar: "Added to Calendar"
+        case .reminder: "Added to Reminders"
+        case .alarm: "Alarm set"
+        case .timer: "Timer started"
+        default: "Done"
+        }
+    }
+
+    private static func readyText(_ d: DeferredAction) -> String {
+        switch d {
+        case .message: "Draft ready"
+        case .email: "Draft ready"
+        case .directions: "Ready in Maps"
+        }
+    }
+
+    private static func readyButton(_ d: DeferredAction) -> String {
         switch d {
         case .message, .email: "Review & send"
         case .directions: "Open Maps"
         }
+    }
+
+    // MARK: Footer
+
+    private var footer: some View {
+        VStack(spacing: 6) {
+            if model.results != nil {
+                bigButton("Close") { model.closePlan() }
+            } else {
+                bigButton(plan.actions.count > 1 ? "Approve all" : "Approve", busy: model.isExecuting) {
+                    Task { await model.approve() }
+                }
+                Button("Cancel") { model.cancelPlan() }
+                    .font(.body).foregroundStyle(.white.opacity(0.6)).padding(.vertical, 10)
+                    .disabled(model.isExecuting)
+            }
+        }
+        .padding(.horizontal, 24).padding(.top, 6).padding(.bottom, 10)
+    }
+
+    private func bigButton(_ title: String, busy: Bool = false, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Group {
+                if busy { ProgressView().tint(.black) } else { Text(title) }
+            }
+            .font(.headline).foregroundStyle(.black)
+            .frame(maxWidth: .infinity).padding(.vertical, 17)
+            .background(.white, in: Capsule())
+        }
+        .buttonStyle(CardPressStyle())
+        .disabled(busy)
     }
 }

@@ -12,7 +12,7 @@ struct OnboardingView: View {
                 .font(.title3)
                 .foregroundStyle(.secondary)
                 .padding(.top, 8)
-            Text("Hold the button, say what you need, and approve what Sayso sets up. Everything stays on your iPhone.")
+            Text("Tap or hold the button, say what you need, and approve what Sayso sets up. Your voice is processed on your iPhone.")
                 .font(.body)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)

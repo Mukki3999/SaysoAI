@@ -12,6 +12,7 @@ struct ActionResult: Identifiable {
     }
 
     let id = UUID()
+    let action: ProposedAction
     let symbol: String
     let title: String
     var outcome: Outcome
@@ -54,10 +55,10 @@ final class ActionExecutor {
             case .email(let d): outcome = .ready(.email(d))
             case .directions(let d): outcome = .ready(.directions(d))
             }
-            return ActionResult(symbol: action.symbol, title: action.card, outcome: outcome)
+            return ActionResult(action: action, symbol: action.symbol, title: action.card, outcome: outcome)
         } catch {
             let denied = error is PermissionDenied
-            return ActionResult(symbol: action.symbol, title: action.card,
+            return ActionResult(action: action, symbol: action.symbol, title: action.card,
                                 outcome: .failed(error.localizedDescription, needsSettings: denied))
         }
     }
