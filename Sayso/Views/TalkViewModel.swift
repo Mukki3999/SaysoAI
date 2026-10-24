@@ -31,17 +31,38 @@ final class TalkViewModel {
         }
     }
 
+    /// Tap the mic once for hands-free: Sayso stops itself after you pause. Or hold and release.
+    private(set) var handsFree = false
+    private var pressStart = Date.now
+    private var monitorTask: Task<Void, Never>?
+
+    var caption: String {
+        switch state {
+        case .listening: handsFree ? "Listening… pause when you're done, or tap to finish" : "Release when you're done"
+        case .thinking: ""
+        default: "Hold to talk, or tap once"
+        }
+    }
+
     func pressBegan() {
+        // A tap while hands-free listening means "I'm done".
+        if state == .listening, handsFree {
+            Task { await finishListening() }
+            return
+        }
         guard !pressing, canStartTalking else { return }
         pressing = true
+        handsFree = false
+        pressStart = .now
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         startTask = Task {
             do {
                 try await speech.start()
-                // Finger already lifted while we were starting up.
-                if !pressing { await finishListening() } else { state = .listening }
+                state = .listening
+                startMonitor()
             } catch {
                 pressing = false
+                handsFree = false
                 state = .error(Self.message(for: error))
             }
         }
@@ -51,9 +72,40 @@ final class TalkViewModel {
         guard pressing else { return }
         pressing = false
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        // A quick tap switches to hands-free; a longer hold ends on release.
+        if Date.now.timeIntervalSince(pressStart) < 0.4 {
+            handsFree = true
+            return
+        }
         Task {
             await startTask?.value
             if state == .listening { await finishListening() }
+        }
+    }
+
+    /// Hands-free end-of-speech detection: stops after a pause once words were heard.
+    private func startMonitor() {
+        monitorTask?.cancel()
+        monitorTask = Task { [weak self] in
+            let began = Date.now
+            var lastVoice = Date.now
+            var lastText = ""
+            var heardWords = false
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(150))
+                guard let self, self.state == .listening else { return }
+                let text = self.speech.transcript
+                if text != lastText || self.speech.level > 0.15 { lastVoice = .now; lastText = text }
+                if !text.isEmpty { heardWords = true }
+                let silence = Date.now.timeIntervalSince(lastVoice)
+                let total = Date.now.timeIntervalSince(began)
+                if (self.handsFree && heardWords && silence > 1.4)
+                    || (self.handsFree && !heardWords && total > 8)
+                    || total > 45 {
+                    await self.finishListening()
+                    return
+                }
+            }
         }
     }
 
@@ -168,12 +220,15 @@ final class TalkViewModel {
     }
 
     private func finishListening() async {
+        guard state == .listening else { return }
+        monitorTask?.cancel()
+        handsFree = false
+        state = .thinking
         let text = await speech.stop()
         guard text.count > 1 else {
             state = .error("Didn't catch that.")
             return
         }
-        state = .thinking
         do {
             switch try await agent.respond(to: text) {
             case .question(let q): state = .question(q)

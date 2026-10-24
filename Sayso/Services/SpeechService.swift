@@ -117,7 +117,11 @@ final class SpeechService {
         inputContinuation?.finish()
         inputContinuation = nil
         try? await analyzer?.finalizeAndFinishThroughEndOfInput()
-        await resultsTask?.value
+        // If the final result never arrives, don't hang: give up after 3 seconds and use what we have.
+        let task = resultsTask
+        let watchdog = Task { try? await Task.sleep(for: .seconds(3)); task?.cancel() }
+        await task?.value
+        watchdog.cancel()
         analyzer = nil
         resultsTask = nil
         level = 0

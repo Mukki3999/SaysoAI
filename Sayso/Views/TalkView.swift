@@ -24,7 +24,9 @@ struct TalkView: View {
                     .frame(height: 170)
                 micButton
                     .padding(.top, 8)
-                    .padding(.bottom, 28)
+                Text(model.caption)
+                    .font(.footnote).foregroundStyle(.tertiary)
+                    .frame(height: 20).padding(.top, 10).padding(.bottom, 18)
             }
         }
         .sheet(isPresented: $showSettings) { SettingsSheet() }
