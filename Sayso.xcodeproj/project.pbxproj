@@ -1,0 +1,538 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0E09B8106E301F4F8B4A1EB0 /* SetAlarmTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE683DE91DF1F29B5F0963FB /* SetAlarmTool.swift */; };
+		122246C18E8CF0EF4B4E74AF /* TalkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 729DF8E93ED0D35982C85243 /* TalkView.swift */; };
+		24DCF31A6D73C63B8B052C40 /* ContactsResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34EBEE58817B8EE734048B29 /* ContactsResolver.swift */; };
+		3B2C1A83773B3D226D712E27 /* SaysoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 854C81D2A382E7A43D522413 /* SaysoTests.swift */; };
+		3FD2714653AE1F57B1253092 /* DraftMessageTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7387BEBEA25E4B44F0E5144 /* DraftMessageTool.swift */; };
+		4A999C20D4BE50CEB5EB251A /* TalkViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F8C3B02616337512F59B53A /* TalkViewModel.swift */; };
+		5557685775DEB0DA6B0625AF /* ConfirmationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03BC46DB9202D226073F5DAA /* ConfirmationSheet.swift */; };
+		64DF3682F15529AD5E15219A /* UnsupportedDeviceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67447A9939FB1A970452000A /* UnsupportedDeviceView.swift */; };
+		72B53049BBEBCC136F4134C2 /* ActionExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 559901917FA27B9B5E9BFB09 /* ActionExecutor.swift */; };
+		91DB648E2E71C5A39E30CCE7 /* RecentAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ABC90124BD9BAE2DD0CE7C5 /* RecentAction.swift */; };
+		9875627A2F769EAB08B48309 /* CreateReminderTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5131D06607C459697E4F5F00 /* CreateReminderTool.swift */; };
+		9A1BFBBA6EA0723C85C026F0 /* AgentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C08AFE7D50D9C33A94E1058 /* AgentService.swift */; };
+		9EC06BF7ABBC10D0EF59B779 /* ActionPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8485134C850FB968C9063B5 /* ActionPlan.swift */; };
+		A5D34D7D1E0597756396F0F4 /* ActionEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A8B932B2E0B58CD324187B /* ActionEditor.swift */; };
+		A96891627B0B4DB5046315A3 /* WaveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 313F16EFB227DAD1630C6938 /* WaveView.swift */; };
+		C6B72BA6938B351434360EBC /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED6D9E4B909AB343F0121FC5 /* OnboardingView.swift */; };
+		C7E2572A744038E36BD76928 /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F0510269492ADE2E2BE8BA /* SettingsSheet.swift */; };
+		CA59567257075188C3C46B9A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FCA9345A9EBA6BDFF6DB44B5 /* Assets.xcassets */; };
+		D31EF5E2EFC536EEEC78C106 /* DraftEmailTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49D4C6A20F9A2C77AD9B8ADF /* DraftEmailTool.swift */; };
+		D4A3DE11DA96A678E26E297D /* CreateCalendarEventTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277685B9B551DD652BB0B065 /* CreateCalendarEventTool.swift */; };
+		DD03B46BBBA9904D469B042E /* ComposeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B0D9CB646E471D853A01A5C /* ComposeViews.swift */; };
+		E6A306E12BAF26C5D94B4470 /* SpeechService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0808FA54597A0A6111E3694C /* SpeechService.swift */; };
+		E89FAA7862A68CD2D8193A78 /* OpenDirectionsTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 307AECB9F77D8D409C55084E /* OpenDirectionsTool.swift */; };
+		F022122297EF80EC912921F8 /* StartTimerTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 022667DEF8B571ED352843FF /* StartTimerTool.swift */; };
+		F10BA34525B63FFE1025AC74 /* SaysoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6213B894178E7E7AC7EC2BC9 /* SaysoApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		79D94C9631E9B819B3E5647C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 32996E55B96ECDBD9235866E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 913A22543DD01A1249268449;
+			remoteInfo = Sayso;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		022667DEF8B571ED352843FF /* StartTimerTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartTimerTool.swift; sourceTree = "<group>"; };
+		03BC46DB9202D226073F5DAA /* ConfirmationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmationSheet.swift; sourceTree = "<group>"; };
+		0808FA54597A0A6111E3694C /* SpeechService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechService.swift; sourceTree = "<group>"; };
+		0A5DC6026C2BE995992B8E94 /* Sayso.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Sayso.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0F8C3B02616337512F59B53A /* TalkViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkViewModel.swift; sourceTree = "<group>"; };
+		277685B9B551DD652BB0B065 /* CreateCalendarEventTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateCalendarEventTool.swift; sourceTree = "<group>"; };
+		307AECB9F77D8D409C55084E /* OpenDirectionsTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenDirectionsTool.swift; sourceTree = "<group>"; };
+		313F16EFB227DAD1630C6938 /* WaveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveView.swift; sourceTree = "<group>"; };
+		34EBEE58817B8EE734048B29 /* ContactsResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactsResolver.swift; sourceTree = "<group>"; };
+		47A8B932B2E0B58CD324187B /* ActionEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionEditor.swift; sourceTree = "<group>"; };
+		49D4C6A20F9A2C77AD9B8ADF /* DraftEmailTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftEmailTool.swift; sourceTree = "<group>"; };
+		4B0D9CB646E471D853A01A5C /* ComposeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposeViews.swift; sourceTree = "<group>"; };
+		4C08AFE7D50D9C33A94E1058 /* AgentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentService.swift; sourceTree = "<group>"; };
+		5131D06607C459697E4F5F00 /* CreateReminderTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateReminderTool.swift; sourceTree = "<group>"; };
+		559901917FA27B9B5E9BFB09 /* ActionExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionExecutor.swift; sourceTree = "<group>"; };
+		5ABC90124BD9BAE2DD0CE7C5 /* RecentAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentAction.swift; sourceTree = "<group>"; };
+		6213B894178E7E7AC7EC2BC9 /* SaysoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaysoApp.swift; sourceTree = "<group>"; };
+		65D36B466ABCA2CF510F84DE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		67447A9939FB1A970452000A /* UnsupportedDeviceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnsupportedDeviceView.swift; sourceTree = "<group>"; };
+		729DF8E93ED0D35982C85243 /* TalkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkView.swift; sourceTree = "<group>"; };
+		854C81D2A382E7A43D522413 /* SaysoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaysoTests.swift; sourceTree = "<group>"; };
+		A7387BEBEA25E4B44F0E5144 /* DraftMessageTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftMessageTool.swift; sourceTree = "<group>"; };
+		C1F0510269492ADE2E2BE8BA /* SettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSheet.swift; sourceTree = "<group>"; };
+		D8485134C850FB968C9063B5 /* ActionPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionPlan.swift; sourceTree = "<group>"; };
+		ED6D9E4B909AB343F0121FC5 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		EE683DE91DF1F29B5F0963FB /* SetAlarmTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetAlarmTool.swift; sourceTree = "<group>"; };
+		EF59964F83950329D6CEA468 /* SaysoTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SaysoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		FCA9345A9EBA6BDFF6DB44B5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		0B8E567A6E3B7BCA75722A2C /* Sayso */ = {
+			isa = PBXGroup;
+			children = (
+				FCA9345A9EBA6BDFF6DB44B5 /* Assets.xcassets */,
+				65D36B466ABCA2CF510F84DE /* Info.plist */,
+				6213B894178E7E7AC7EC2BC9 /* SaysoApp.swift */,
+				7E0A9BAC764FE47C643C90B0 /* Models */,
+				993E782153C42E7E4AD6343B /* Services */,
+				205526CADB6B999D9D7446E9 /* Tools */,
+				4953604212576D33A6CCDA03 /* Views */,
+			);
+			path = Sayso;
+			sourceTree = "<group>";
+		};
+		205526CADB6B999D9D7446E9 /* Tools */ = {
+			isa = PBXGroup;
+			children = (
+				277685B9B551DD652BB0B065 /* CreateCalendarEventTool.swift */,
+				5131D06607C459697E4F5F00 /* CreateReminderTool.swift */,
+				49D4C6A20F9A2C77AD9B8ADF /* DraftEmailTool.swift */,
+				A7387BEBEA25E4B44F0E5144 /* DraftMessageTool.swift */,
+				307AECB9F77D8D409C55084E /* OpenDirectionsTool.swift */,
+				EE683DE91DF1F29B5F0963FB /* SetAlarmTool.swift */,
+				022667DEF8B571ED352843FF /* StartTimerTool.swift */,
+			);
+			path = Tools;
+			sourceTree = "<group>";
+		};
+		451461410E2239BE04DA69BA = {
+			isa = PBXGroup;
+			children = (
+				0B8E567A6E3B7BCA75722A2C /* Sayso */,
+				64CB68D9635DF096D9680C92 /* SaysoTests */,
+				D1B15D8F7DEEBC8F65EE7D27 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		4953604212576D33A6CCDA03 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				47A8B932B2E0B58CD324187B /* ActionEditor.swift */,
+				4B0D9CB646E471D853A01A5C /* ComposeViews.swift */,
+				03BC46DB9202D226073F5DAA /* ConfirmationSheet.swift */,
+				ED6D9E4B909AB343F0121FC5 /* OnboardingView.swift */,
+				C1F0510269492ADE2E2BE8BA /* SettingsSheet.swift */,
+				729DF8E93ED0D35982C85243 /* TalkView.swift */,
+				0F8C3B02616337512F59B53A /* TalkViewModel.swift */,
+				67447A9939FB1A970452000A /* UnsupportedDeviceView.swift */,
+				313F16EFB227DAD1630C6938 /* WaveView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		64CB68D9635DF096D9680C92 /* SaysoTests */ = {
+			isa = PBXGroup;
+			children = (
+				854C81D2A382E7A43D522413 /* SaysoTests.swift */,
+			);
+			path = SaysoTests;
+			sourceTree = "<group>";
+		};
+		7E0A9BAC764FE47C643C90B0 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				D8485134C850FB968C9063B5 /* ActionPlan.swift */,
+				5ABC90124BD9BAE2DD0CE7C5 /* RecentAction.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		993E782153C42E7E4AD6343B /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				559901917FA27B9B5E9BFB09 /* ActionExecutor.swift */,
+				4C08AFE7D50D9C33A94E1058 /* AgentService.swift */,
+				34EBEE58817B8EE734048B29 /* ContactsResolver.swift */,
+				0808FA54597A0A6111E3694C /* SpeechService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		D1B15D8F7DEEBC8F65EE7D27 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				0A5DC6026C2BE995992B8E94 /* Sayso.app */,
+				EF59964F83950329D6CEA468 /* SaysoTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		233C82F5A895289290CFA6D8 /* SaysoTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E1A4C2A1EBCA086A6D0F4498 /* Build configuration list for PBXNativeTarget "SaysoTests" */;
+			buildPhases = (
+				D72B9E7E2E8CE7D4E0DD1E6E /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				725F97F2607C804747D668A6 /* PBXTargetDependency */,
+			);
+			name = SaysoTests;
+			packageProductDependencies = (
+			);
+			productName = SaysoTests;
+			productReference = EF59964F83950329D6CEA468 /* SaysoTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		913A22543DD01A1249268449 /* Sayso */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D84C88246647457E08BFAF0A /* Build configuration list for PBXNativeTarget "Sayso" */;
+			buildPhases = (
+				3F432DEBCFCE3E9983214AB6 /* Sources */,
+				8BFB3615CBC0F12F6DB5C327 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Sayso;
+			packageProductDependencies = (
+			);
+			productName = Sayso;
+			productReference = 0A5DC6026C2BE995992B8E94 /* Sayso.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		32996E55B96ECDBD9235866E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					233C82F5A895289290CFA6D8 = {
+						DevelopmentTeam = XR95QV2C94;
+						ProvisioningStyle = Automatic;
+					};
+					913A22543DD01A1249268449 = {
+						DevelopmentTeam = XR95QV2C94;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 8CCBB6CAE8529F2CB91932FF /* Build configuration list for PBXProject "Sayso" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 451461410E2239BE04DA69BA;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = D1B15D8F7DEEBC8F65EE7D27 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				913A22543DD01A1249268449 /* Sayso */,
+				233C82F5A895289290CFA6D8 /* SaysoTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		8BFB3615CBC0F12F6DB5C327 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CA59567257075188C3C46B9A /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		3F432DEBCFCE3E9983214AB6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A5D34D7D1E0597756396F0F4 /* ActionEditor.swift in Sources */,
+				72B53049BBEBCC136F4134C2 /* ActionExecutor.swift in Sources */,
+				9EC06BF7ABBC10D0EF59B779 /* ActionPlan.swift in Sources */,
+				9A1BFBBA6EA0723C85C026F0 /* AgentService.swift in Sources */,
+				DD03B46BBBA9904D469B042E /* ComposeViews.swift in Sources */,
+				5557685775DEB0DA6B0625AF /* ConfirmationSheet.swift in Sources */,
+				24DCF31A6D73C63B8B052C40 /* ContactsResolver.swift in Sources */,
+				D4A3DE11DA96A678E26E297D /* CreateCalendarEventTool.swift in Sources */,
+				9875627A2F769EAB08B48309 /* CreateReminderTool.swift in Sources */,
+				D31EF5E2EFC536EEEC78C106 /* DraftEmailTool.swift in Sources */,
+				3FD2714653AE1F57B1253092 /* DraftMessageTool.swift in Sources */,
+				C6B72BA6938B351434360EBC /* OnboardingView.swift in Sources */,
+				E89FAA7862A68CD2D8193A78 /* OpenDirectionsTool.swift in Sources */,
+				91DB648E2E71C5A39E30CCE7 /* RecentAction.swift in Sources */,
+				F10BA34525B63FFE1025AC74 /* SaysoApp.swift in Sources */,
+				0E09B8106E301F4F8B4A1EB0 /* SetAlarmTool.swift in Sources */,
+				C7E2572A744038E36BD76928 /* SettingsSheet.swift in Sources */,
+				E6A306E12BAF26C5D94B4470 /* SpeechService.swift in Sources */,
+				F022122297EF80EC912921F8 /* StartTimerTool.swift in Sources */,
+				122246C18E8CF0EF4B4E74AF /* TalkView.swift in Sources */,
+				4A999C20D4BE50CEB5EB251A /* TalkViewModel.swift in Sources */,
+				64DF3682F15529AD5E15219A /* UnsupportedDeviceView.swift in Sources */,
+				A96891627B0B4DB5046315A3 /* WaveView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D72B9E7E2E8CE7D4E0DD1E6E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3B2C1A83773B3D226D712E27 /* SaysoTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		725F97F2607C804747D668A6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 913A22543DD01A1249268449 /* Sayso */;
+			targetProxy = 79D94C9631E9B819B3E5647C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		10BE83F38A145DD1436A1F30 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.sayso.app.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Sayso.app/Sayso";
+			};
+			name = Debug;
+		};
+		17B121D1C3CCC32ECE6C13A7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.sayso.app.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Sayso.app/Sayso";
+			};
+			name = Release;
+		};
+		86C7279BB67C2B2B6CA95DDB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = XR95QV2C94;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		CC420F5BBC4FAAA0A2992C86 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Sayso/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.sayso.app;
+				PRODUCT_NAME = Sayso;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		CDECC9B2C035DB898C00F2EB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = XR95QV2C94;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		E3EF233D2535B83FBA4EBCE2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Sayso/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.sayso.app;
+				PRODUCT_NAME = Sayso;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		8CCBB6CAE8529F2CB91932FF /* Build configuration list for PBXProject "Sayso" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				86C7279BB67C2B2B6CA95DDB /* Debug */,
+				CDECC9B2C035DB898C00F2EB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D84C88246647457E08BFAF0A /* Build configuration list for PBXNativeTarget "Sayso" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E3EF233D2535B83FBA4EBCE2 /* Debug */,
+				CC420F5BBC4FAAA0A2992C86 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		E1A4C2A1EBCA086A6D0F4498 /* Build configuration list for PBXNativeTarget "SaysoTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				10BE83F38A145DD1436A1F30 /* Debug */,
+				17B121D1C3CCC32ECE6C13A7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 32996E55B96ECDBD9235866E /* Project object */;
+}
