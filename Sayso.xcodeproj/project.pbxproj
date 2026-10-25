@@ -22,6 +22,7 @@
 		37926C11CC16B3C010676F98 /* PlanSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10520F1093C9142B6BA9F308 /* PlanSheet.swift */; };
 		3B2C1A83773B3D226D712E27 /* SaysoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 854C81D2A382E7A43D522413 /* SaysoTests.swift */; };
 		3FD2714653AE1F57B1253092 /* DraftMessageTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7387BEBEA25E4B44F0E5144 /* DraftMessageTool.swift */; };
+		3FD6ACDC1A78B8E0F7ACA033 /* OnboardingScenes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97EB849F1BE4624F0352CA96 /* OnboardingScenes.swift */; };
 		4A999C20D4BE50CEB5EB251A /* TalkViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F8C3B02616337512F59B53A /* TalkViewModel.swift */; };
 		4B749B6D19B7FDEC3E8FC18E /* DayTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A687073A6223E62AAC834F88 /* DayTimeline.swift */; };
 		4EADC7FA0BD8C7BDE05CD146 /* MenuParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2ABC1080EC2BE350C73F30A1 /* MenuParser.swift */; };
@@ -35,6 +36,7 @@
 		72B53049BBEBCC136F4134C2 /* ActionExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 559901917FA27B9B5E9BFB09 /* ActionExecutor.swift */; };
 		7A64B21A09CFA61061C93825 /* PlanningCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CEABD65B382201FFEC80B1 /* PlanningCalendar.swift */; };
 		7C1DD480CC5041B82B9FC119 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E5BB54FEED08C168C8D3E3A /* HomeView.swift */; };
+		80FEB6CA0D1CB799C8F430CF /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5479211E9E891D07FC583DD6 /* OnboardingView.swift */; };
 		8C81446A505B39E372A67ECA /* MenuRanker.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF9E47D15032D4CA17C8351D /* MenuRanker.swift */; };
 		9186A2E856D5E4306EF44B7E /* Timeout.swift in Sources */ = {isa = PBXBuildFile; fileRef = F67F3FA858930E8EFECB5B76 /* Timeout.swift */; };
 		9875627A2F769EAB08B48309 /* CreateReminderTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5131D06607C459697E4F5F00 /* CreateReminderTool.swift */; };
@@ -48,9 +50,9 @@
 		AAC24A1DDAB3FCB8B56CD3CB /* LifeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B8F419C5485764CC747BFC /* LifeStore.swift */; };
 		ADA51ECE3DD692EEF1DCCC66 /* Diagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AFF13D5D53107E44E782785 /* Diagnostics.swift */; };
 		B41047B60AA9FD1ECCA92258 /* MenuTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62EDF7F4C7B92FE26BCBC5A9 /* MenuTests.swift */; };
-		C6B72BA6938B351434360EBC /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED6D9E4B909AB343F0121FC5 /* OnboardingView.swift */; };
 		C7E2572A744038E36BD76928 /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F0510269492ADE2E2BE8BA /* SettingsSheet.swift */; };
 		CA59567257075188C3C46B9A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FCA9345A9EBA6BDFF6DB44B5 /* Assets.xcassets */; };
+		CB52BC4AA720D4678B4A4C4E /* OnboardingParts.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF670A268DE7371C5873A5A1 /* OnboardingParts.swift */; };
 		D165CFF78E884E101B58442A /* ChatRows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FDB7CD7A056D1974C52C070 /* ChatRows.swift */; };
 		D31EF5E2EFC536EEEC78C106 /* DraftEmailTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49D4C6A20F9A2C77AD9B8ADF /* DraftEmailTool.swift */; };
 		D4A3DE11DA96A678E26E297D /* CreateCalendarEventTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277685B9B551DD652BB0B065 /* CreateCalendarEventTool.swift */; };
@@ -111,6 +113,7 @@
 		4C08AFE7D50D9C33A94E1058 /* AgentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentService.swift; sourceTree = "<group>"; };
 		4C3522F0A8762175265B0CF1 /* RouterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouterTests.swift; sourceTree = "<group>"; };
 		5131D06607C459697E4F5F00 /* CreateReminderTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateReminderTool.swift; sourceTree = "<group>"; };
+		5479211E9E891D07FC583DD6 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		559901917FA27B9B5E9BFB09 /* ActionExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionExecutor.swift; sourceTree = "<group>"; };
 		59D2FCE0D50A0D124ED109C2 /* EditEventTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditEventTools.swift; sourceTree = "<group>"; };
 		5AFF13D5D53107E44E782785 /* Diagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Diagnostics.swift; sourceTree = "<group>"; };
@@ -127,6 +130,7 @@
 		775807554E286327D09D4833 /* PlannerRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlannerRouter.swift; sourceTree = "<group>"; };
 		82080EC783DAF251977F366C /* MenuHelperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuHelperView.swift; sourceTree = "<group>"; };
 		854C81D2A382E7A43D522413 /* SaysoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaysoTests.swift; sourceTree = "<group>"; };
+		97EB849F1BE4624F0352CA96 /* OnboardingScenes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingScenes.swift; sourceTree = "<group>"; };
 		A625D16F131EDACEB3147920 /* ChatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModels.swift; sourceTree = "<group>"; };
 		A687073A6223E62AAC834F88 /* DayTimeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayTimeline.swift; sourceTree = "<group>"; };
 		A7387BEBEA25E4B44F0E5144 /* DraftMessageTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftMessageTool.swift; sourceTree = "<group>"; };
@@ -138,10 +142,10 @@
 		C1F0510269492ADE2E2BE8BA /* SettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSheet.swift; sourceTree = "<group>"; };
 		C29BFB143334536F6B374CFF /* MenuModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuModels.swift; sourceTree = "<group>"; };
 		D8485134C850FB968C9063B5 /* ActionPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionPlan.swift; sourceTree = "<group>"; };
+		DF670A268DE7371C5873A5A1 /* OnboardingParts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingParts.swift; sourceTree = "<group>"; };
 		E9154A4F9E796C58FA5E7284 /* PreferenceParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferenceParser.swift; sourceTree = "<group>"; };
 		E950F3F21F4D1FA1CAAA5783 /* DayPlanSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayPlanSession.swift; sourceTree = "<group>"; };
 		EB8269AD222EE6E46F36C92A /* MenuPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuPreferences.swift; sourceTree = "<group>"; };
-		ED6D9E4B909AB343F0121FC5 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		EE04106004C7318847D0B1CD /* PlannerIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlannerIntents.swift; sourceTree = "<group>"; };
 		EE683DE91DF1F29B5F0963FB /* SetAlarmTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetAlarmTool.swift; sourceTree = "<group>"; };
 		EF59964F83950329D6CEA468 /* SaysoTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SaysoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -154,6 +158,16 @@
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		04B18A88F1BECCF57EC174D8 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				DF670A268DE7371C5873A5A1 /* OnboardingParts.swift */,
+				97EB849F1BE4624F0352CA96 /* OnboardingScenes.swift */,
+				5479211E9E891D07FC583DD6 /* OnboardingView.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
 		0B8E567A6E3B7BCA75722A2C /* Sayso */ = {
 			isa = PBXGroup;
 			children = (
@@ -221,13 +235,13 @@
 				04FD602A01B713C15AAB1671 /* DiagnosticsView.swift */,
 				5E5BB54FEED08C168C8D3E3A /* HomeView.swift */,
 				445D988C5F1E1030DF2912F1 /* ManualPlanForm.swift */,
-				ED6D9E4B909AB343F0121FC5 /* OnboardingView.swift */,
 				10520F1093C9142B6BA9F308 /* PlanSheet.swift */,
 				C1F0510269492ADE2E2BE8BA /* SettingsSheet.swift */,
 				729DF8E93ED0D35982C85243 /* TalkView.swift */,
 				0F8C3B02616337512F59B53A /* TalkViewModel.swift */,
 				67447A9939FB1A970452000A /* UnsupportedDeviceView.swift */,
 				313F16EFB227DAD1630C6938 /* WaveView.swift */,
+				04B18A88F1BECCF57EC174D8 /* Onboarding */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -449,7 +463,9 @@
 				022196E320725A78F1CA5ACC /* MenuPhotoView.swift in Sources */,
 				FDAC2AD579AF11F9398C83F4 /* MenuPreferences.swift in Sources */,
 				8C81446A505B39E372A67ECA /* MenuRanker.swift in Sources */,
-				C6B72BA6938B351434360EBC /* OnboardingView.swift in Sources */,
+				CB52BC4AA720D4678B4A4C4E /* OnboardingParts.swift in Sources */,
+				3FD6ACDC1A78B8E0F7ACA033 /* OnboardingScenes.swift in Sources */,
+				80FEB6CA0D1CB799C8F430CF /* OnboardingView.swift in Sources */,
 				E89FAA7862A68CD2D8193A78 /* OpenDirectionsTool.swift in Sources */,
 				37926C11CC16B3C010676F98 /* PlanSheet.swift in Sources */,
 				D802192C8AA1981C25E9AD24 /* PlannerIntents.swift in Sources */,
@@ -562,7 +578,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 10;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = XR95QV2C94;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -647,7 +663,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 10;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = XR95QV2C94;
 				ENABLE_NS_ASSERTIONS = NO;
