@@ -78,7 +78,9 @@ struct PlannerSheets: ViewModifier {
                 }
             }
             .sheet(item: $model.planSession) { session in PlanSheet(model: model, session: session) }
-            .sheet(isPresented: $model.showMenu) { MenuHelperView(modelAvailable: model.agent.isModelAvailable) }
+            .sheet(isPresented: $model.showMenu, onDismiss: { model.menuSeed = nil }) {
+                MenuHelperView(modelAvailable: model.agent.isModelAvailable, seed: model.menuSeed)
+            }
     }
 }
 

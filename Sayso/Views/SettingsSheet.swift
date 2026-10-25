@@ -61,6 +61,9 @@ struct SettingsSheet: View {
                 } footer: {
                     Text("Planning, editing and cancelling events need full calendar access. Everything Sayso plans goes in its own “\(PlanningCalendar.calendarName)” calendar, so you can remove it all in one step.")
                 }
+                Section("Troubleshooting") {
+                    NavigationLink("Run self-test") { DiagnosticsView() }
+                }
                 Section {
                     Link("Privacy policy", destination: privacyURL)
                     Link("Support", destination: supportURL)

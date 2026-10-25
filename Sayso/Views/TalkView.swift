@@ -6,6 +6,8 @@ struct TalkView: View {
     @State private var showSettings = false
     @State private var showType = false
     @State private var pickedPhoto: PhotosPickerItem?
+    @State private var showPhotoPicker = false
+    @State private var showCamera = false
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
 
@@ -42,7 +44,14 @@ struct TalkView: View {
         .onChange(of: pickedPhoto) { _, item in
             guard let item else { return }
             pickedPhoto = nil
-            Task { await model.handlePhoto(item) }
+            Task { await model.loadPhoto(item) }
+        }
+        .photosPicker(isPresented: $showPhotoPicker, selection: $pickedPhoto, matching: .images)
+        .fullScreenCover(isPresented: $showCamera) {
+            CameraPicker { data in Task { model.receivePhoto(data) } }.ignoresSafeArea()
+        }
+        .sheet(item: $model.pendingPhoto) { photo in
+            PhotoPromptSheet(photo: photo) { text in Task { await model.sendPhoto(photo, text: text) } }
         }
         .sheet(isPresented: $showSettings) { SettingsSheet(planner: model.planner) }
         .sheet(isPresented: $showType) { TypeSheet { text in Task { await model.ask(text) } } }
@@ -103,6 +112,7 @@ struct TalkView: View {
                     .foregroundStyle(.white.opacity(0.55)).multilineTextAlignment(.center)
                 Label("Thinking", systemImage: "sparkles").font(.footnote).foregroundStyle(.white.opacity(0.5))
                     .symbolEffect(.pulse)
+                pillButton("Cancel") { model.cancelThinking() }
             case .answer(let a):
                 replyCard(title: model.spoken, body: a)
                 pillButton("Done") { model.dismissError() }
@@ -186,11 +196,14 @@ struct TalkView: View {
             Spacer()
             micButton
             Spacer()
-            PhotosPicker(selection: $pickedPhoto, matching: .images) {
+            Menu {
+                Button { showPhotoPicker = true } label: { Label("Photo library", systemImage: "photo.on.rectangle") }
+                if CameraPicker.isAvailable { Button { showCamera = true } label: { Label("Take a photo", systemImage: "camera") } }
+            } label: {
                 Image(systemName: "photo.on.rectangle.angled").font(.system(size: 21, weight: .medium)).foregroundStyle(.white)
                     .frame(width: 56, height: 56).background(Color.white.opacity(0.12), in: Circle())
             }
-            .accessibilityLabel("Plan from a photo")
+            .accessibilityLabel("Add a photo")
             .opacity(idle ? 1 : 0.3).disabled(!idle)
         }
         .padding(.horizontal, 28)

@@ -2,6 +2,7 @@ import SwiftUI
 import MessageUI
 import Observation
 import PhotosUI
+import UIKit
 
 enum TalkState: Equatable {
     case idle, listening, thinking
@@ -9,6 +10,17 @@ enum TalkState: Equatable {
     case answer(String)
     case done(String)
     case error(String)
+}
+
+struct PendingPhoto: Identifiable {
+    let id = UUID()
+    let data: Data
+    var image: UIImage? { UIImage(data: data) }
+}
+
+struct MenuSeed {
+    let data: Data
+    let text: String
 }
 
 @MainActor @Observable
@@ -30,6 +42,9 @@ final class TalkViewModel {
     var planSession: DayPlanSession?
     var showManualPlan = false
     var showMenu = false
+    var menuSeed: MenuSeed?
+    var pendingPhoto: PendingPhoto?
+    private var requestID = 0
     private(set) var plannerStep: PlannerStep?
     private var draftTasks: [PlanTask] = []
 
@@ -132,44 +147,79 @@ final class TalkViewModel {
 
     private static func message(for error: Error) -> String {
         if let e = error as? LocalizedError, let d = e.errorDescription { return d }
-        #if DEBUG
-        return "Something went wrong: \(error) / \(error.localizedDescription)"
-        #else
-        return "Something went wrong. Try again."
-        #endif
+        // Always say what failed, so a report can be acted on.
+        return "Something went wrong. Try again.\n\(Diagnostics.describe(error))"
     }
 
     func dismissError() { state = .idle; errorNeedsSettings = false }
 
-    /// Reads text from a shared photo on-device and turns it into actions.
-    func handlePhoto(_ item: PhotosPickerItem) async {
+    /// A photo was chosen. Ask what to do with it instead of guessing.
+    func loadPhoto(_ item: PhotosPickerItem) async {
+        guard let data = try? await item.loadTransferable(type: Data.self) else {
+            state = .error("Sayso couldn't open that photo.")
+            return
+        }
+        receivePhoto(data)
+    }
+
+    func receivePhoto(_ data: Data) {
         guard canStartTalking else { return }
-        spoken = "Reading your photo…"
+        pendingPhoto = PendingPhoto(data: data)
+    }
+
+    /// Menus go to the Menu Helper. Anything else is read on the iPhone and turned into actions.
+    func sendPhoto(_ photo: PendingPhoto, text: String) async {
+        pendingPhoto = nil
+        let said = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        spoken = said.isEmpty ? "Reading your photo…" : said
         state = .thinking
+        requestID += 1
+        let id = requestID
         do {
-            guard let data = try await item.loadTransferable(type: Data.self) else { throw ImageTextError.unreadable }
-            let text = String(try await ImageTextReader.read(data).prefix(1800))
-            let firstLine = text.split(separator: "\n").first.map(String.init) ?? "your photo"
-            let prompt = """
-            The user shared a photo. This is the text on it:
-            \"\"\"
-            \(text)
-            \"\"\"
-            Create the calendar events, reminders and alarms it implies. For example, for a booking add the event and a reminder to leave beforehand.
-            """
-            switch try await agent.respond(to: prompt, shownAs: "Photo: \(firstLine.prefix(60))") {
-            case .question(let q): state = .question(q)
-            case .answer(let a): state = .answer(a)
-            case .plan(let plan):
-                self.plan = plan
-                results = nil
+            let scan = try await withTimeout(seconds: 30) { try await MenuOCRService.read(photo.data) }
+            guard id == requestID, state == .thinking else { return }
+            if MenuDetector.looksLikeMenu(scan.lines, userText: said) || said == "What should I eat?" {
+                menuSeed = MenuSeed(data: photo.data, text: said == "What should I eat?" ? "" : said)
+                showMenu = true
                 state = .idle
-            case .planner(let intent): await begin(intent)
+                return
             }
+            let text = String(scan.lines.map(\.text).joined(separator: "\n").prefix(1800))
+            let firstLine = scan.lines.first?.text ?? "your photo"
+            let ask = said.isEmpty
+                ? "Create the calendar events, reminders and alarms it implies. For example, for a booking add the event and a reminder to leave beforehand."
+                : "The user says: \(said)"
+            let prompt = "The user shared a photo. This is the text on it:\n\"\"\"\n\(text)\n\"\"\"\n\(ask)"
+            let agent = self.agent
+            let label = "Photo: \(firstLine.prefix(60))"
+            let outcome = try await withTimeout(seconds: 60) { try await agent.respond(to: prompt, shownAs: label) }
+            guard id == requestID, state == .thinking else { return }
+            await apply(outcome)
         } catch {
+            guard id == requestID else { return }
             errorNeedsSettings = error is PermissionDenied
             state = .error(Self.message(for: error))
         }
+    }
+
+    private func apply(_ outcome: AgentOutcome) async {
+        switch outcome {
+        case .question(let q): state = .question(q)
+        case .answer(let a): state = .answer(a)
+        case .plan(let plan):
+            self.plan = plan
+            results = nil
+            state = .idle
+        case .planner(let intent): await begin(intent)
+        }
+    }
+
+    /// Stops waiting on the model and returns to the home screen.
+    func cancelThinking() {
+        requestID += 1
+        agent.resetConversation()
+        plannerStep = nil
+        state = .idle
     }
 
     // MARK: Plan lifecycle
@@ -284,17 +334,16 @@ final class TalkViewModel {
         spoken = text
         if let step = plannerStep { await handlePlannerAnswer(step, text); return }
         state = .thinking
+        requestID += 1
+        let id = requestID
+        let agent = self.agent
         do {
-            switch try await agent.respond(to: text) {
-            case .question(let q): state = .question(q)
-            case .answer(let a): state = .answer(a)
-            case .plan(let plan):
-                self.plan = plan
-                results = nil
-                state = .idle
-            case .planner(let intent): await begin(intent)
-            }
+            let outcome = try await withTimeout(seconds: 60) { try await agent.respond(to: text) }
+            guard id == requestID, state == .thinking else { return }   // cancelled or replaced meanwhile
+            await apply(outcome)
         } catch {
+            guard id == requestID else { return }
+            agent.resetConversation()
             errorNeedsSettings = error is PermissionDenied
             state = .error(Self.message(for: error))
         }

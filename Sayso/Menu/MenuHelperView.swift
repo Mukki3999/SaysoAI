@@ -9,7 +9,12 @@ struct MenuHelperView: View {
     @FocusState private var typing: Bool
     @Environment(\.dismiss) private var dismiss
 
-    init(modelAvailable: Bool) { _model = State(initialValue: MenuHelperViewModel(modelAvailable: modelAvailable)) }
+    private let seed: MenuSeed?
+
+    init(modelAvailable: Bool, seed: MenuSeed? = nil) {
+        _model = State(initialValue: MenuHelperViewModel(modelAvailable: modelAvailable))
+        self.seed = seed
+    }
 
     var body: some View {
         ZStack {
@@ -42,6 +47,10 @@ struct MenuHelperView: View {
             CameraPicker { data in Task { await model.load(data) } }.ignoresSafeArea()
         }
         .task {
+            if let seed, model.image == nil {
+                await model.load(seed.data)
+                if !seed.text.isEmpty { await model.submit(seed.text) }
+            }
             #if DEBUG
             await DemoMenu.loadIfRequested(model)
             #endif

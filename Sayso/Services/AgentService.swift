@@ -1,7 +1,7 @@
 import FoundationModels
 import Observation
 
-enum AgentOutcome {
+enum AgentOutcome: Sendable {
     case plan(ActionPlan)
     case question(String)   // the model needs one more detail
     case answer(String)     // a reply to a question about the user's day
@@ -47,20 +47,18 @@ final class AgentService {
     func resetConversation() { session = nil }
 
     /// `shownAs` is what the confirmation sheet displays when the prompt isn't what the user literally said.
-    func respond(to transcript: String, shownAs label: String? = nil, forceMain: Bool = false) async throws -> AgentOutcome {
+    func respond(to transcript: String, shownAs label: String? = nil, forceMain: Bool = false, compact: Bool = false) async throws -> AgentOutcome {
+        // "Plan my day" and "I'm behind" start their own flows. Catching them here keeps their tools out of the model's small window.
+        if session == nil, label == nil, let intent = PlannerRouter.route(transcript) { return .planner(intent) }
         await collector.reset()
         if self.session == nil { await directory.reset() }
         // Edits get their own small tool set: the on-device model's context window is small.
         let editing = self.session == nil && !forceMain && Self.looksLikeEdit(transcript)
-        let session = self.session ?? (editing ? makeEditSession() : makeSession())
+        let session = self.session ?? (editing ? makeEditSession() : makeSession(compact: compact))
         self.session = session
         do {
             let response = try await session.respond(to: transcript, options: GenerationOptions(temperature: 0.2))
             let actions = await collector.drain()
-            if let intent = await collector.takeIntent() {
-                self.session = nil
-                return .planner(intent)
-            }
             if actions.isEmpty {
                 if editing, response.content.contains("NOT_EDIT") {
                     self.session = nil
@@ -80,12 +78,21 @@ final class AgentService {
             throw ToolError(error.underlyingError.localizedDescription)
         } catch let error as LanguageModelSession.GenerationError {
             self.session = nil
+            // Too much for the small window: try once more with shorter instructions.
+            if case .exceededContextWindowSize = error, !compact {
+                return try await respond(to: transcript, shownAs: label, forceMain: true, compact: true)
+            }
             throw ToolError(Self.message(for: error))
         }
     }
 
-    private func makeSession() -> LanguageModelSession {
-        LanguageModelSession(model: model, tools: tools, instructions: instructions())
+    private func makeSession(compact: Bool = false) -> LanguageModelSession {
+        LanguageModelSession(model: model, tools: tools, instructions: instructions(compact: compact))
+    }
+
+    /// For the self-test: how big the model's fixed input is.
+    var sizeSummary: String {
+        "\(tools.count) tools, instructions \(instructions().count) characters (compact: \(instructions(compact: true).count))"
     }
 
     // MARK: Planner helpers (the model parses and words things; the Scheduler does all the scheduling)
@@ -173,18 +180,23 @@ final class AgentService {
             DraftMessageTool(collector: collector),
             DraftEmailTool(collector: collector),
             OpenDirectionsTool(collector: collector),
-            PlanMyDayTool(collector: collector),
-            RescueMyDayTool(collector: collector),
             GetAgendaTool()
         ]
     }
 
-    private func instructions() -> String {
+    private func instructions(compact: Bool = false) -> String {
+        let examples = compact ? "" : """
+
+        Example: "Dinner with Ankit Saturday at 8 at Nobu, remind me to book a table, and wake me at 6:30"
+        -> createCalendarEvent(Dinner with Ankit, Saturday 20:00, location Nobu); createReminder(Book a table); setAlarm(6:30).
+        Example: "Text Sam I'm 10 minutes late and take me to Blue Bottle"
+        -> draftMessage(Sam, "Running about 10 minutes late"); openDirections(Blue Bottle).
         """
+        return """
         You are Sayso, an assistant that turns spoken requests into device actions.
         Now: \(DateText.promptNow()).
         Upcoming days, use these exact dates:
-        \(DateText.promptCalendar())
+        \(DateText.promptCalendar(days: compact ? 4 : 8))
 
         Rules:
         - Always call tools. Never say you did something without calling one.
@@ -193,16 +205,11 @@ final class AgentService {
         - Write dates and times as local yyyy-MM-dd'T'HH:mm:ss.
         - Bare hours with no AM or PM: alarms 4 to 11 are AM. Events and reminders 1 to 6 are PM, 7 to 11 are AM unless the request says tonight, dinner or evening. 12 is noon.
         - If the user gives no end time, leave end empty. Never invent locations, names or notes.
-        - "Plan my day" or "organize my day" = planMyDay. "I'm 30 minutes behind" or "re-plan the rest of my day" about their own schedule = rescueDay. A message to someone ("text Sam I'm late") is draftMessage, not rescueDay.
         - Questions about the user's schedule ("what's on tomorrow", "am I free Saturday"): call getAgenda for each day asked, then answer in one or two short sentences. Do not call action tools for questions.
         - Make sensible choices instead of asking. Ask one short clarifying question, with no tool calls, only when a required detail is truly missing, such as who to message or which day.
         - Write message and email text in the user's voice, short and natural.
         - After the tool calls, reply in one short sentence.
-
-        Example: "Dinner with Ankit Saturday at 8 at Nobu, remind me to book a table, and wake me at 6:30"
-        -> createCalendarEvent(Dinner with Ankit, Saturday 20:00, location Nobu); createReminder(Book a table); setAlarm(6:30).
-        Example: "Text Sam I'm 10 minutes late and take me to Blue Bottle"
-        -> draftMessage(Sam, "Running about 10 minutes late"); openDirections(Blue Bottle).
+        \(examples)
         """
     }
 
@@ -230,7 +237,7 @@ final class AgentService {
         case .guardrailViolation: "Sayso can't help with that request."
         case .exceededContextWindowSize: "That was too long. Try a shorter request."
         case .unsupportedLanguageOrLocale: "Sayso doesn't support that language yet."
-        default: "Sayso couldn't understand that. Try again."
+        default: "Sayso couldn't understand that (\(String(describing: error).prefix(40))). Try again."
         }
     }
 }

@@ -181,10 +181,6 @@ struct ProposedAction: Identifiable, Equatable, Sendable, Codable {
 /// EventKit, AlarmKit, Contacts or MessageUI.
 actor PlanCollector {
     private var actions: [ProposedAction] = []
-    private var plannerIntent: PlannerIntent?
-
-    func setIntent(_ intent: PlannerIntent) { plannerIntent = intent }
-    func takeIntent() -> PlannerIntent? { defer { plannerIntent = nil }; return plannerIntent }
 
     func add(_ payload: ProposedAction.Payload) -> Bool {
         let action = ProposedAction(payload: payload)
@@ -199,7 +195,7 @@ actor PlanCollector {
         return actions
     }
 
-    func reset() { actions = []; plannerIntent = nil }
+    func reset() { actions = [] }
 }
 
 /// "Plan my day" and "Rescue my day" don't create actions. They start the planner, which has its own sheet.
@@ -313,13 +309,13 @@ enum DateText {
     }
 
     /// The next 8 days spelled out, so the model never has to work out which date "Saturday" is.
-    static func promptCalendar() -> String {
+    static func promptCalendar(days: Int = 8) -> String {
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_US_POSIX")
         f.timeZone = .current
         f.dateFormat = "EEEE yyyy-MM-dd"
         let cal = Calendar.current
-        return (0..<8).map { offset in
+        return (0..<days).map { offset in
             let d = cal.date(byAdding: .day, value: offset, to: .now)!
             let label = offset == 0 ? "today" : offset == 1 ? "tomorrow" : ""
             return "- \(f.string(from: d))" + (label.isEmpty ? "" : " (\(label))")
