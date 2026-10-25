@@ -25,7 +25,7 @@
 	<key>NSAlarmKitUsageDescription</key>
 	<string>Sayso sets alarms and timers when you ask it to, so they ring like any other alarm on your iPhone.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>Sayso shows today's events on your home screen and answers questions about your schedule. Your calendar stays on your iPhone.</string>
+	<string>Sayso reads your calendar to show your day, answer questions about it, change or cancel events when you ask, and plan your day around them. Your calendar stays on your iPhone.</string>
 	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
 	<string>Sayso adds events to your calendar when you ask it to. It can only add events, not read your existing ones.</string>
 	<key>NSContactsUsageDescription</key>
@@ -33,7 +33,7 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Sayso listens only while you hold the mic button, to turn what you say into text. Audio is processed on your iPhone and never leaves it.</string>
 	<key>NSRemindersFullAccessUsageDescription</key>
-	<string>Sayso creates reminders when you ask it to.</string>
+	<string>Sayso creates reminders when you ask it to, and checks the ones due today when planning your day.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Sayso converts your speech to text on your iPhone so it can understand your request. Nothing is sent to a server.</string>
 	<key>UILaunchScreen</key>

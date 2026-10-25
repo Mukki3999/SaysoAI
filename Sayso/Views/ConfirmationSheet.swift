@@ -19,9 +19,13 @@ struct ConfirmationSheet: View {
                             }
                         } else {
                             ForEach(Array(plan.actions.enumerated()), id: \.element.id) { i, a in
-                                Button { editing = a } label: { reviewCard(a) }
-                                    .buttonStyle(CardPressStyle())
-                                    .staggerIn(i)
+                                if a.isEventChange {
+                                    eventChangeCard(a).staggerIn(i)
+                                } else {
+                                    Button { editing = a } label: { reviewCard(a) }
+                                        .buttonStyle(CardPressStyle())
+                                        .staggerIn(i)
+                                }
                             }
                         }
                     }
@@ -51,10 +55,18 @@ struct ConfirmationSheet: View {
             Text("“\(plan.transcript)”")
                 .font(.title3.weight(.medium)).foregroundStyle(.white)
                 .multilineTextAlignment(.center).lineLimit(3)
-            Text(plan.actions.count > 1 ? "\(plan.actions.count) things to do · tap a card to edit" : "Tap the card to edit")
+            Text(subtitle)
                 .font(.footnote).foregroundStyle(.white.opacity(0.5)).padding(.top, 2)
         }
         .padding(.horizontal, 28).padding(.top, 34).padding(.bottom, 18)
+    }
+
+    private var subtitle: String {
+        let changes = plan.actions.filter(\.isEventChange).count
+        if changes == plan.actions.count {
+            return changes > 1 ? "\(changes) calendar changes · nothing happens until you approve" : "Nothing changes until you approve"
+        }
+        return plan.actions.count > 1 ? "\(plan.actions.count) things to do · tap a card to edit" : "Tap the card to edit"
     }
 
     private func doneHeader(_ results: [ActionResult]) -> some View {
@@ -79,6 +91,30 @@ struct ConfirmationSheet: View {
                 Image(systemName: "pencil").font(.caption.weight(.bold)).foregroundStyle(.black.opacity(0.4))
                     .frame(width: 30, height: 30).padding(14)
             }
+    }
+
+    /// Before/after cards aren't edited by hand: say it differently, or drop the card.
+    private func eventChangeCard(_ action: ProposedAction) -> some View {
+        VStack(spacing: 0) {
+            ActionCardBody(action: action).padding(20)
+            if action.editsRepeatingEvent {
+                Divider()
+                SpanPicker(selection: action.chosenSpan) { plan.setSpan($0, for: action.id) }
+                    .padding(.horizontal, 20).padding(.vertical, 14)
+            }
+        }
+        .background(.white, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .overlay(alignment: .topTrailing) {
+            Button {
+                plan.remove(action.id)
+                if plan.actions.isEmpty { model.cancelPlan() }
+            } label: {
+                Image(systemName: "xmark").font(.caption.weight(.bold)).foregroundStyle(.black.opacity(0.5))
+                    .frame(width: 30, height: 30).background(Color.black.opacity(0.06), in: Circle())
+            }
+            .padding(14)
+            .accessibilityLabel("Leave this one out")
+        }
     }
 
     private func resultCard(_ r: ActionResult) -> some View {
@@ -130,6 +166,8 @@ struct ConfirmationSheet: View {
         case .reminder: "Added to Reminders"
         case .alarm: "Alarm set"
         case .timer: "Timer started"
+        case .updateEvent: "Event updated"
+        case .deleteEvent: "Event cancelled"
         default: "Done"
         }
     }
@@ -156,9 +194,15 @@ struct ConfirmationSheet: View {
             if model.results != nil {
                 bigButton("Close") { model.closePlan() }
             } else {
+                if plan.needsSpanChoice {
+                    Text("Choose how to apply the repeating event first.")
+                        .font(.footnote).foregroundStyle(.white.opacity(0.55))
+                }
                 bigButton(plan.actions.count > 1 ? "Approve all" : "Approve", busy: model.isExecuting) {
                     Task { await model.approve() }
                 }
+                .opacity(plan.needsSpanChoice ? 0.35 : 1)
+                .disabled(plan.needsSpanChoice)
                 Button("Cancel") { model.cancelPlan() }
                     .font(.body).foregroundStyle(.white.opacity(0.6)).padding(.vertical, 10)
                     .disabled(model.isExecuting)

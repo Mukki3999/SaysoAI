@@ -114,7 +114,7 @@ struct TalkView: View {
                     .multilineTextAlignment(.center)
             case .error(let message):
                 Text(message).font(.title3).foregroundStyle(.white).multilineTextAlignment(.center)
-                if model.speech.permissionDenied {
+                if model.speech.permissionDenied || model.errorNeedsSettings {
                     pillButton("Open Settings") {
                         if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                     }

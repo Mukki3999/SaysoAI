@@ -17,8 +17,22 @@ struct SaysoApp: App {
     /// Debug-only: shows the approval sheet in the simulator without the on-device model.
     private static func loadDemoPlanIfRequested(_ model: TalkViewModel) {
         #if DEBUG
-        guard ProcessInfo.processInfo.environment["SAYSO_DEMO_PLAN"] == "1" else { return }
+        let demo = ProcessInfo.processInfo.environment["SAYSO_DEMO_PLAN"]
         let cal = Calendar.current
+        if demo == "edit" {
+            let day = cal.startOfDay(for: .now)
+            func at(_ h: Int, _ m: Int = 0) -> Date { cal.date(bySettingHour: h, minute: m, second: 0, of: day)! }
+            let dentist = EventSnapshot(title: "Dentist", start: at(15), end: at(16), location: "Smile Care", isRecurring: false)
+            var moved = dentist
+            moved.start = at(17); moved.end = at(18)
+            let sync = EventSnapshot(title: "Team sync", start: at(17, 30), end: at(18), location: "", isRecurring: true)
+            model.plan = ActionPlan(actions: [
+                ProposedAction(payload: .updateEvent(.init(eventID: "x", before: dentist, after: moved, span: nil))),
+                ProposedAction(payload: .deleteEvent(.init(eventID: "y", before: sync, span: nil)))
+            ], transcript: "Move my dentist to 5 and cancel the team sync")
+            return
+        }
+        guard demo == "1" else { return }
         let tomorrow = cal.date(byAdding: .day, value: 1, to: .now)!
         func at(_ h: Int, _ m: Int = 0) -> Date { cal.date(bySettingHour: h, minute: m, second: 0, of: tomorrow)! }
         model.plan = ActionPlan(actions: [

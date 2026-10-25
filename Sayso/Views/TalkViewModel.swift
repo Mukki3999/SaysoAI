@@ -25,6 +25,8 @@ final class TalkViewModel {
     }
 
     private(set) var state: TalkState = .idle
+    /// True when the last error was a missing permission, so the error card can offer Settings.
+    private(set) var errorNeedsSettings = false
     private(set) var spoken = ""
     var plan: ActionPlan?
     private(set) var results: [ActionResult]?
@@ -128,7 +130,7 @@ final class TalkViewModel {
         #endif
     }
 
-    func dismissError() { state = .idle }
+    func dismissError() { state = .idle; errorNeedsSettings = false }
 
     /// Reads text from a shared photo on-device and turns it into actions.
     func handlePhoto(_ item: PhotosPickerItem) async {
@@ -155,6 +157,7 @@ final class TalkViewModel {
                 state = .idle
             }
         } catch {
+            errorNeedsSettings = error is PermissionDenied
             state = .error(Self.message(for: error))
         }
     }
@@ -280,6 +283,7 @@ final class TalkViewModel {
                 state = .idle
             }
         } catch {
+            errorNeedsSettings = error is PermissionDenied
             state = .error(Self.message(for: error))
         }
     }

@@ -32,9 +32,9 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         NSMicrophoneUsageDescription: Sayso listens only while you hold the mic button, to turn what you say into text. Audio is processed on your iPhone and never leaves it.
         NSSpeechRecognitionUsageDescription: Sayso converts your speech to text on your iPhone so it can understand your request. Nothing is sent to a server.
-        NSCalendarsFullAccessUsageDescription: Sayso shows today's events on your home screen and answers questions about your schedule. Your calendar stays on your iPhone.
+        NSCalendarsFullAccessUsageDescription: Sayso reads your calendar to show your day, answer questions about it, change or cancel events when you ask, and plan your day around them. Your calendar stays on your iPhone.
         NSCalendarsWriteOnlyAccessUsageDescription: Sayso adds events to your calendar when you ask it to. It can only add events, not read your existing ones.
-        NSRemindersFullAccessUsageDescription: Sayso creates reminders when you ask it to.
+        NSRemindersFullAccessUsageDescription: Sayso creates reminders when you ask it to, and checks the ones due today when planning your day.
         NSContactsUsageDescription: Sayso looks up the person you name so it can address your message or email. Contacts stay on your iPhone.
         NSAlarmKitUsageDescription: Sayso sets alarms and timers when you ask it to, so they ring like any other alarm on your iPhone.
   SaysoTests:

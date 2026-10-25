@@ -27,6 +27,8 @@ struct ActionCardBody: View {
         case .message(let d): MessagePreview(d: d)
         case .email(let d): EmailPreview(d: d)
         case .directions(let d): DirectionsPreview(d: d)
+        case .updateEvent(let d): EventDiffPreview(before: d.before, after: d.after, removing: false)
+        case .deleteEvent(let d): EventDiffPreview(before: d.before, after: nil, removing: true)
         }
     }
 }
@@ -274,5 +276,101 @@ struct CardPressStyle: ButtonStyle {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
             .animation(.spring(duration: 0.25), value: configuration.isPressed)
+    }
+}
+
+
+// MARK: - Event edits (before / after)
+
+struct EventDiffPreview: View {
+    let before: EventSnapshot
+    let after: EventSnapshot?
+    let removing: Bool
+
+    private func range(_ e: EventSnapshot) -> String {
+        let day = e.start.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())
+        let sameDay = Calendar.current.isDate(e.start, inSameDayAs: e.end)
+        let end = sameDay ? e.end.formatted(date: .omitted, time: .shortened)
+                          : e.end.formatted(.dateTime.weekday(.abbreviated).hour().minute())
+        return "\(day) · \(e.start.formatted(date: .omitted, time: .shortened)) – \(end)"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            if removing {
+                Text(before.title).font(.title3.weight(.semibold)).foregroundStyle(.black.opacity(0.45)).strikethrough()
+                row("Will be removed", range(before), struck: true)
+                if !before.location.isEmpty { Chip(symbol: "mappin.and.ellipse", text: before.location) }
+            } else if let after {
+                if after.title != before.title {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(before.title).font(.subheadline).foregroundStyle(.black.opacity(0.4)).strikethrough()
+                        Text(after.title).font(.title3.weight(.semibold)).foregroundStyle(.black)
+                    }
+                } else {
+                    Text(after.title).font(.title3.weight(.semibold)).foregroundStyle(.black)
+                }
+                if before.start != after.start || before.end != after.end {
+                    changed("When", range(before), range(after))
+                } else {
+                    row("When", range(after), struck: false)
+                }
+                if before.location != after.location {
+                    changed("Where", before.location.isEmpty ? "No location" : before.location,
+                            after.location.isEmpty ? "No location" : after.location)
+                } else if !after.location.isEmpty {
+                    Chip(symbol: "mappin.and.ellipse", text: after.location)
+                }
+            }
+            if before.isRecurring { Chip(symbol: "repeat", text: "Repeating event") }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func row(_ label: String, _ value: String, struck: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(label.uppercased()).font(.caption2.weight(.semibold)).tracking(0.8).foregroundStyle(.black.opacity(0.4))
+            Text(value).font(.subheadline.weight(.medium)).foregroundStyle(.black.opacity(struck ? 0.45 : 0.8))
+                .strikethrough(struck)
+        }
+    }
+
+    private func changed(_ label: String, _ old: String, _ new: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(label.uppercased()).font(.caption2.weight(.semibold)).tracking(0.8).foregroundStyle(.black.opacity(0.4))
+            Text(old).font(.subheadline).foregroundStyle(.black.opacity(0.45)).strikethrough()
+            HStack(spacing: 8) {
+                Image(systemName: "arrow.down").font(.caption.weight(.bold)).foregroundStyle(.black.opacity(0.5))
+                Text(new).font(.headline).foregroundStyle(.black)
+            }
+        }
+    }
+}
+
+/// "This event only" or "This and future events". Required before a repeating event can be changed.
+struct SpanPicker: View {
+    let selection: EditSpan?
+    let onPick: (EditSpan) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(selection == nil ? "This event repeats. Apply to:" : "Applies to:")
+                .font(.footnote.weight(.medium)).foregroundStyle(.black.opacity(0.6))
+            HStack(spacing: 8) {
+                option("This event only", .thisEvent)
+                option("This and future", .futureEvents)
+            }
+        }
+    }
+
+    private func option(_ title: String, _ span: EditSpan) -> some View {
+        let on = selection == span
+        return Button { onPick(span) } label: {
+            Text(title).font(.subheadline.weight(.semibold))
+                .foregroundStyle(on ? .white : .black)
+                .frame(maxWidth: .infinity).padding(.vertical, 10)
+                .background(on ? Color.black : Color.black.opacity(0.07), in: Capsule())
+        }
+        .buttonStyle(CardPressStyle())
     }
 }

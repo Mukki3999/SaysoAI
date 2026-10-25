@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		0E09B8106E301F4F8B4A1EB0 /* SetAlarmTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE683DE91DF1F29B5F0963FB /* SetAlarmTool.swift */; };
 		122246C18E8CF0EF4B4E74AF /* TalkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 729DF8E93ED0D35982C85243 /* TalkView.swift */; };
+		14B7A4F201EB5554DA14C4E1 /* Scheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD6A86AB47F83ECA07A050C4 /* Scheduler.swift */; };
+		1F3B89F6134141946CE8D7B6 /* SchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02CCECB01E2622FEF6F8F714 /* SchedulerTests.swift */; };
 		24DCF31A6D73C63B8B052C40 /* ContactsResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34EBEE58817B8EE734048B29 /* ContactsResolver.swift */; };
 		376798C854AF18D50EF06801 /* DayStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B86508395BBAC0C4C4D9BBCE /* DayStore.swift */; };
 		3B2C1A83773B3D226D712E27 /* SaysoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 854C81D2A382E7A43D522413 /* SaysoTests.swift */; };
@@ -18,6 +20,7 @@
 		56E0997F190C02E9F441A216 /* AgendaReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DAC3155FFA85EAF79C31F72 /* AgendaReader.swift */; };
 		64DF3682F15529AD5E15219A /* UnsupportedDeviceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67447A9939FB1A970452000A /* UnsupportedDeviceView.swift */; };
 		6BA5B405325A15FDDA0CDF73 /* ImageTextReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 398EA6E95CB2FD67B7DE1586 /* ImageTextReader.swift */; };
+		6BD9DC001620421A54ADA99C /* EditEventTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59D2FCE0D50A0D124ED109C2 /* EditEventTools.swift */; };
 		72B53049BBEBCC136F4134C2 /* ActionExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 559901917FA27B9B5E9BFB09 /* ActionExecutor.swift */; };
 		7C1DD480CC5041B82B9FC119 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E5BB54FEED08C168C8D3E3A /* HomeView.swift */; };
 		9875627A2F769EAB08B48309 /* CreateReminderTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5131D06607C459697E4F5F00 /* CreateReminderTool.swift */; };
@@ -34,6 +37,7 @@
 		D31EF5E2EFC536EEEC78C106 /* DraftEmailTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49D4C6A20F9A2C77AD9B8ADF /* DraftEmailTool.swift */; };
 		D4A3DE11DA96A678E26E297D /* CreateCalendarEventTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277685B9B551DD652BB0B065 /* CreateCalendarEventTool.swift */; };
 		DD03B46BBBA9904D469B042E /* ComposeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B0D9CB646E471D853A01A5C /* ComposeViews.swift */; };
+		E46C5D8C825DFEBC3BFD9786 /* CalendarAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE3025264C2A488B3BE68218 /* CalendarAccess.swift */; };
 		E4BF2FB5E2DADFBBFEE0BED8 /* ActionCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CAC0C9C2FD16E7DB0722D3C /* ActionCards.swift */; };
 		E6A306E12BAF26C5D94B4470 /* SpeechService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0808FA54597A0A6111E3694C /* SpeechService.swift */; };
 		E89FAA7862A68CD2D8193A78 /* OpenDirectionsTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 307AECB9F77D8D409C55084E /* OpenDirectionsTool.swift */; };
@@ -54,6 +58,7 @@
 
 /* Begin PBXFileReference section */
 		022667DEF8B571ED352843FF /* StartTimerTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartTimerTool.swift; sourceTree = "<group>"; };
+		02CCECB01E2622FEF6F8F714 /* SchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchedulerTests.swift; sourceTree = "<group>"; };
 		03BC46DB9202D226073F5DAA /* ConfirmationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmationSheet.swift; sourceTree = "<group>"; };
 		0808FA54597A0A6111E3694C /* SpeechService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechService.swift; sourceTree = "<group>"; };
 		0A5DC6026C2BE995992B8E94 /* Sayso.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Sayso.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -73,6 +78,7 @@
 		4C08AFE7D50D9C33A94E1058 /* AgentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentService.swift; sourceTree = "<group>"; };
 		5131D06607C459697E4F5F00 /* CreateReminderTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateReminderTool.swift; sourceTree = "<group>"; };
 		559901917FA27B9B5E9BFB09 /* ActionExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionExecutor.swift; sourceTree = "<group>"; };
+		59D2FCE0D50A0D124ED109C2 /* EditEventTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditEventTools.swift; sourceTree = "<group>"; };
 		5E5BB54FEED08C168C8D3E3A /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		6213B894178E7E7AC7EC2BC9 /* SaysoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaysoApp.swift; sourceTree = "<group>"; };
 		65D36B466ABCA2CF510F84DE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -81,6 +87,7 @@
 		729DF8E93ED0D35982C85243 /* TalkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkView.swift; sourceTree = "<group>"; };
 		854C81D2A382E7A43D522413 /* SaysoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaysoTests.swift; sourceTree = "<group>"; };
 		A7387BEBEA25E4B44F0E5144 /* DraftMessageTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftMessageTool.swift; sourceTree = "<group>"; };
+		AE3025264C2A488B3BE68218 /* CalendarAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarAccess.swift; sourceTree = "<group>"; };
 		B86508395BBAC0C4C4D9BBCE /* DayStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayStore.swift; sourceTree = "<group>"; };
 		C1F0510269492ADE2E2BE8BA /* SettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSheet.swift; sourceTree = "<group>"; };
 		D8485134C850FB968C9063B5 /* ActionPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionPlan.swift; sourceTree = "<group>"; };
@@ -89,6 +96,7 @@
 		EF59964F83950329D6CEA468 /* SaysoTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SaysoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F0AAD0511694547D3CCB6965 /* GetAgendaTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetAgendaTool.swift; sourceTree = "<group>"; };
 		FCA9345A9EBA6BDFF6DB44B5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		FD6A86AB47F83ECA07A050C4 /* Scheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scheduler.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -99,6 +107,7 @@
 				65D36B466ABCA2CF510F84DE /* Info.plist */,
 				6213B894178E7E7AC7EC2BC9 /* SaysoApp.swift */,
 				7E0A9BAC764FE47C643C90B0 /* Models */,
+				4579190E70CBBDCC2FB489DD /* Planning */,
 				993E782153C42E7E4AD6343B /* Services */,
 				205526CADB6B999D9D7446E9 /* Tools */,
 				4953604212576D33A6CCDA03 /* Views */,
@@ -113,6 +122,7 @@
 				5131D06607C459697E4F5F00 /* CreateReminderTool.swift */,
 				49D4C6A20F9A2C77AD9B8ADF /* DraftEmailTool.swift */,
 				A7387BEBEA25E4B44F0E5144 /* DraftMessageTool.swift */,
+				59D2FCE0D50A0D124ED109C2 /* EditEventTools.swift */,
 				F0AAD0511694547D3CCB6965 /* GetAgendaTool.swift */,
 				307AECB9F77D8D409C55084E /* OpenDirectionsTool.swift */,
 				EE683DE91DF1F29B5F0963FB /* SetAlarmTool.swift */,
@@ -128,6 +138,14 @@
 				64CB68D9635DF096D9680C92 /* SaysoTests */,
 				D1B15D8F7DEEBC8F65EE7D27 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		4579190E70CBBDCC2FB489DD /* Planning */ = {
+			isa = PBXGroup;
+			children = (
+				FD6A86AB47F83ECA07A050C4 /* Scheduler.swift */,
+			);
+			path = Planning;
 			sourceTree = "<group>";
 		};
 		4953604212576D33A6CCDA03 /* Views */ = {
@@ -154,6 +172,7 @@
 			isa = PBXGroup;
 			children = (
 				854C81D2A382E7A43D522413 /* SaysoTests.swift */,
+				02CCECB01E2622FEF6F8F714 /* SchedulerTests.swift */,
 			);
 			path = SaysoTests;
 			sourceTree = "<group>";
@@ -172,6 +191,7 @@
 				559901917FA27B9B5E9BFB09 /* ActionExecutor.swift */,
 				1DAC3155FFA85EAF79C31F72 /* AgendaReader.swift */,
 				4C08AFE7D50D9C33A94E1058 /* AgentService.swift */,
+				AE3025264C2A488B3BE68218 /* CalendarAccess.swift */,
 				34EBEE58817B8EE734048B29 /* ContactsResolver.swift */,
 				B86508395BBAC0C4C4D9BBCE /* DayStore.swift */,
 				398EA6E95CB2FD67B7DE1586 /* ImageTextReader.swift */,
@@ -291,6 +311,7 @@
 				A3B0CD1D1A2E083C8CF05013 /* AgendaCard.swift in Sources */,
 				56E0997F190C02E9F441A216 /* AgendaReader.swift in Sources */,
 				9A1BFBBA6EA0723C85C026F0 /* AgentService.swift in Sources */,
+				E46C5D8C825DFEBC3BFD9786 /* CalendarAccess.swift in Sources */,
 				DD03B46BBBA9904D469B042E /* ComposeViews.swift in Sources */,
 				5557685775DEB0DA6B0625AF /* ConfirmationSheet.swift in Sources */,
 				24DCF31A6D73C63B8B052C40 /* ContactsResolver.swift in Sources */,
@@ -299,6 +320,7 @@
 				376798C854AF18D50EF06801 /* DayStore.swift in Sources */,
 				D31EF5E2EFC536EEEC78C106 /* DraftEmailTool.swift in Sources */,
 				3FD2714653AE1F57B1253092 /* DraftMessageTool.swift in Sources */,
+				6BD9DC001620421A54ADA99C /* EditEventTools.swift in Sources */,
 				AA0FF2D31B8BFE957B6192D9 /* GetAgendaTool.swift in Sources */,
 				7C1DD480CC5041B82B9FC119 /* HomeView.swift in Sources */,
 				6BA5B405325A15FDDA0CDF73 /* ImageTextReader.swift in Sources */,
@@ -306,6 +328,7 @@
 				C6B72BA6938B351434360EBC /* OnboardingView.swift in Sources */,
 				E89FAA7862A68CD2D8193A78 /* OpenDirectionsTool.swift in Sources */,
 				F10BA34525B63FFE1025AC74 /* SaysoApp.swift in Sources */,
+				14B7A4F201EB5554DA14C4E1 /* Scheduler.swift in Sources */,
 				0E09B8106E301F4F8B4A1EB0 /* SetAlarmTool.swift in Sources */,
 				C7E2572A744038E36BD76928 /* SettingsSheet.swift in Sources */,
 				E6A306E12BAF26C5D94B4470 /* SpeechService.swift in Sources */,
@@ -323,6 +346,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3B2C1A83773B3D226D712E27 /* SaysoTests.swift in Sources */,
+				1F3B89F6134141946CE8D7B6 /* SchedulerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

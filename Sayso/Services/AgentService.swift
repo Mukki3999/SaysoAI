@@ -11,6 +11,7 @@ enum AgentOutcome {
 final class AgentService {
     private let model = SystemLanguageModel.default
     private let collector = PlanCollector()
+    private let directory = EventDirectory()
     private var session: LanguageModelSession?
 
     var isModelAvailable: Bool {
@@ -45,14 +46,21 @@ final class AgentService {
     func resetConversation() { session = nil }
 
     /// `shownAs` is what the confirmation sheet displays when the prompt isn't what the user literally said.
-    func respond(to transcript: String, shownAs label: String? = nil) async throws -> AgentOutcome {
+    func respond(to transcript: String, shownAs label: String? = nil, forceMain: Bool = false) async throws -> AgentOutcome {
         await collector.reset()
-        let session = self.session ?? makeSession()
+        if self.session == nil { await directory.reset() }
+        // Edits get their own small tool set: the on-device model's context window is small.
+        let editing = self.session == nil && !forceMain && Self.looksLikeEdit(transcript)
+        let session = self.session ?? (editing ? makeEditSession() : makeSession())
         self.session = session
         do {
             let response = try await session.respond(to: transcript, options: GenerationOptions(temperature: 0.2))
             let actions = await collector.drain()
             if actions.isEmpty {
+                if editing, response.content.contains("NOT_EDIT") {
+                    self.session = nil
+                    return try await respond(to: transcript, shownAs: label, forceMain: true)
+                }
                 // No actions queued: either a clarifying question or an answer about the user's day.
                 let text = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
                 if text.hasSuffix("?") { return .question(text) }
@@ -63,6 +71,7 @@ final class AgentService {
             return .plan(ActionPlan(actions: actions, transcript: label ?? transcript))
         } catch let error as LanguageModelSession.ToolCallError {
             self.session = nil
+            if error.underlyingError is PermissionDenied { throw error.underlyingError }
             throw ToolError(error.underlyingError.localizedDescription)
         } catch let error as LanguageModelSession.GenerationError {
             self.session = nil
@@ -72,6 +81,21 @@ final class AgentService {
 
     private func makeSession() -> LanguageModelSession {
         LanguageModelSession(model: model, tools: tools, instructions: instructions())
+    }
+
+    private func makeEditSession() -> LanguageModelSession {
+        LanguageModelSession(
+            model: model,
+            tools: [FindEventsTool(directory: directory),
+                    UpdateEventTool(collector: collector, directory: directory),
+                    DeleteEventTool(collector: collector, directory: directory)],
+            instructions: editInstructions())
+    }
+
+    /// Cheap check for "this sounds like changing an existing event". If it's wrong the edit session says NOT_EDIT and we retry.
+    private static func looksLikeEdit(_ text: String) -> Bool {
+        text.range(of: #"\b(cancel|delete|remove|reschedule|postpone|push|move|rename|shift|change|edit|update|clear)\b"#,
+                   options: [.regularExpression, .caseInsensitive]) != nil
     }
 
     private var tools: [any Tool] {
@@ -110,6 +134,25 @@ final class AgentService {
         -> createCalendarEvent(Dinner with Ankit, Saturday 20:00, location Nobu); createReminder(Book a table); setAlarm(6:30).
         Example: "Text Sam I'm 10 minutes late and take me to Blue Bottle"
         -> draftMessage(Sam, "Running about 10 minutes late"); openDirections(Blue Bottle).
+        """
+    }
+
+    private func editInstructions() -> String {
+        """
+        You are Sayso. You change or cancel events that are already on the user's calendar.
+        Now: \(DateText.promptNow()).
+        Upcoming days, use these exact dates:
+        \(DateText.promptCalendar())
+
+        Rules:
+        - First call findEvents for the day or range the user means. A whole day runs 00:00:00 to 23:59:00. Put any words from the event's name in text.
+        - Then call updateEvent or deleteEvent with the handle findEvents gave. Never invent a handle.
+        - If findEvents lists several events and the user meant one, ask which one in one short sentence. Make no other calls.
+        - "Cancel everything after 5" or "clear my afternoon": findEvents with all true for that range, then deleteEvent for every handle.
+        - Moving an event to a new time: set newStart only. Renaming: set newTitle only.
+        - Write times as local yyyy-MM-dd'T'HH:mm:ss. Bare hours: 1 to 6 are PM, 7 to 11 are AM unless the user says otherwise.
+        - If the request is not about changing or cancelling an existing calendar event, reply exactly NOT_EDIT and call nothing.
+        - After the tool calls, reply in one short sentence.
         """
     }
 

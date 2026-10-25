@@ -45,6 +45,32 @@ struct DirectionsDraft: Equatable, Sendable, Codable {
     var destination: String
 }
 
+/// How much of a repeating event a change applies to. The user picks; the model never does.
+enum EditSpan: String, Equatable, Sendable, Codable {
+    case thisEvent, futureEvents
+}
+
+struct EventSnapshot: Equatable, Sendable, Codable {
+    var title: String
+    var start: Date
+    var end: Date
+    var location: String
+    var isRecurring: Bool
+}
+
+struct EventEditDraft: Equatable, Sendable, Codable {
+    var eventID: String
+    var before: EventSnapshot
+    var after: EventSnapshot
+    var span: EditSpan?        // required before approval when the event repeats
+}
+
+struct EventDeleteDraft: Equatable, Sendable, Codable {
+    var eventID: String
+    var before: EventSnapshot
+    var span: EditSpan?
+}
+
 // MARK: - Proposed action
 
 struct ProposedAction: Identifiable, Equatable, Sendable, Codable {
@@ -56,6 +82,8 @@ struct ProposedAction: Identifiable, Equatable, Sendable, Codable {
         case message(MessageDraft)
         case email(EmailDraft)
         case directions(DirectionsDraft)
+        case updateEvent(EventEditDraft)
+        case deleteEvent(EventDeleteDraft)
     }
 
     var id = UUID()
@@ -70,6 +98,8 @@ struct ProposedAction: Identifiable, Equatable, Sendable, Codable {
         case .message: "Message"
         case .email: "Email"
         case .directions: "Directions"
+        case .updateEvent: "Edit event"
+        case .deleteEvent: "Cancel event"
         }
     }
 
@@ -82,6 +112,8 @@ struct ProposedAction: Identifiable, Equatable, Sendable, Codable {
         case .message: "message"
         case .email: "envelope"
         case .directions: "arrow.triangle.turn.up.right.diamond"
+        case .updateEvent: "pencil"
+        case .deleteEvent: "trash"
         }
     }
 
@@ -109,10 +141,38 @@ struct ProposedAction: Identifiable, Equatable, Sendable, Codable {
             return "To \(d.recipient): \(d.subject)"
         case .directions(let d):
             return d.destination
+        case .updateEvent(let d):
+            return "\(d.before.title) → \(d.after.title == d.before.title ? DateText.short(d.after.start) : d.after.title)"
+        case .deleteEvent(let d):
+            return "\(d.before.title), \(DateText.short(d.before.start))"
         }
     }
 
     var card: String { "\(kindLabel): \(summary)" }
+
+    /// Edits and cancellations of repeating events need an explicit "this one or all future" choice.
+    var editsRepeatingEvent: Bool {
+        switch payload {
+        case .updateEvent(let d): d.before.isRecurring
+        case .deleteEvent(let d): d.before.isRecurring
+        default: false
+        }
+    }
+
+    var chosenSpan: EditSpan? {
+        switch payload {
+        case .updateEvent(let d): d.span
+        case .deleteEvent(let d): d.span
+        default: nil
+        }
+    }
+
+    var isEventChange: Bool {
+        switch payload {
+        case .updateEvent, .deleteEvent: true
+        default: false
+        }
+    }
 }
 
 // MARK: - Collector (written to by tools, off the main actor)
@@ -156,6 +216,26 @@ final class ActionPlan: Identifiable {
     }
 
     func remove(_ id: ProposedAction.ID) { actions.removeAll { $0.id == id } }
+
+    /// Repeating events need the user to choose "this event" or "this and future" before approving.
+    var needsSpanChoice: Bool {
+        actions.contains {
+            switch $0.payload {
+            case .updateEvent(let d): d.before.isRecurring && d.span == nil
+            case .deleteEvent(let d): d.before.isRecurring && d.span == nil
+            default: false
+            }
+        }
+    }
+
+    func setSpan(_ span: EditSpan, for id: ProposedAction.ID) {
+        guard let i = actions.firstIndex(where: { $0.id == id }) else { return }
+        switch actions[i].payload {
+        case .updateEvent(var d): d.span = span; actions[i].payload = .updateEvent(d)
+        case .deleteEvent(var d): d.span = span; actions[i].payload = .deleteEvent(d)
+        default: break
+        }
+    }
 
     /// The only way to get an `ApprovedPlan`, which is the only thing `ActionExecutor` accepts.
     func approve() -> ApprovedPlan { ApprovedPlan(actions: actions) }
