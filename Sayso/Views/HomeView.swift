@@ -23,6 +23,28 @@ struct HomeView: View {
 
     private var shown: [AgendaItem] { model.day.items(for: filter) }
 
+    @State private var askBehind = false
+
+    private var plannerRow: some View {
+        HStack(spacing: 10) {
+            plannerButton("Plan my day", symbol: "sparkles") { model.startPlanning() }
+            plannerButton("Running behind?", symbol: "gauge.with.dots.needle.67percent") { askBehind = true }
+        }
+        .confirmationDialog("How far behind are you?", isPresented: $askBehind) {
+            ForEach([15, 30, 45, 60, 90], id: \.self) { m in
+                Button("\(m) minutes") { model.startRescue(minutes: m) }
+            }
+        }
+    }
+
+    private func plannerButton(_ title: String, symbol: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: symbol).font(.subheadline.weight(.semibold)).foregroundStyle(.black)
+                .padding(.horizontal, 16).padding(.vertical, 11).background(.white, in: Capsule())
+        }
+        .buttonStyle(CardPressStyle())
+    }
+
     private let examples = [
         "Dinner with Ankit Saturday at 8, then remind me to book a table",
         "Wake me at 6:30 on weekdays",
@@ -44,6 +66,7 @@ struct HomeView: View {
                 .padding(.top, 6)
 
                 pills
+                plannerRow
 
                 VStack(alignment: .leading, spacing: 14) {
                     Text(sectionTitle).font(.title3).foregroundStyle(.white)

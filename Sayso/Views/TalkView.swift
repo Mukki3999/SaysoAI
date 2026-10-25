@@ -44,8 +44,9 @@ struct TalkView: View {
             pickedPhoto = nil
             Task { await model.handlePhoto(item) }
         }
-        .sheet(isPresented: $showSettings) { SettingsSheet() }
+        .sheet(isPresented: $showSettings) { SettingsSheet(planner: model.planner) }
         .sheet(isPresented: $showType) { TypeSheet { text in Task { await model.ask(text) } } }
+        .plannerSheets(model)
         .sheet(item: $model.plan) { plan in ConfirmationSheet(model: model, plan: plan) }
         .sheet(item: $model.messageRequest) { request in
             MessageComposer(request: request) { model.messageRequest = nil }.ignoresSafeArea()
@@ -107,7 +108,9 @@ struct TalkView: View {
                 pillButton("Done") { model.dismissError() }
             case .question(let q):
                 replyCard(title: model.spoken, body: q)
+                plannerChoices
                 Text("Hold or tap the mic to answer").font(.footnote).foregroundStyle(.white.opacity(0.5))
+                if model.plannerStep != nil { pillButton("Not now") { model.cancelPlanner() } }
             case .done(let summary):
                 Image(systemName: "checkmark.circle.fill").font(.system(size: 44, weight: .light)).foregroundStyle(.white)
                 Text(summary).font(.system(size: 28, weight: .medium, design: .serif).italic()).foregroundStyle(.white)
@@ -125,6 +128,32 @@ struct TalkView: View {
         }
         .padding(.horizontal, 28)
         .animation(.smooth, value: model.state)
+    }
+
+    /// Tap-to-answer shortcuts for the planner's two questions.
+    @ViewBuilder
+    private var plannerChoices: some View {
+        switch model.plannerStep {
+        case .focus:
+            HStack(spacing: 8) {
+                ForEach(FocusPreference.allCases, id: \.self) { f in
+                    chip(f == .none ? "No preference" : f.label) { model.chooseFocus(f) }
+                }
+            }
+        case .behind:
+            HStack(spacing: 8) {
+                ForEach([15, 30, 45, 60, 90], id: \.self) { m in chip("\(m) min") { model.chooseBehind(m) } }
+            }
+        default:
+            EmptyView()
+        }
+    }
+
+    private func chip(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title).font(.footnote.weight(.semibold)).foregroundStyle(.white)
+                .padding(.horizontal, 12).padding(.vertical, 8).background(Color.white.opacity(0.14), in: Capsule())
+        }
     }
 
     private func replyCard(title: String, body: String) -> some View {

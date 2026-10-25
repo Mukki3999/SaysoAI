@@ -2,6 +2,7 @@ import SwiftUI
 
 struct UnsupportedDeviceView: View {
     var reason: String
+    var model: TalkViewModel
 
     var body: some View {
         VStack(spacing: 16) {
@@ -16,9 +17,13 @@ struct UnsupportedDeviceView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
+            // Planning never depends on the language model, so it still works here.
+            Button("Plan my day manually") { model.showManualPlan = true }
+                .buttonStyle(.borderedProminent).padding(.top, 8)
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemBackground))
+        .plannerSheets(model)
     }
 }

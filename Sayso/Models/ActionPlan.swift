@@ -181,6 +181,10 @@ struct ProposedAction: Identifiable, Equatable, Sendable, Codable {
 /// EventKit, AlarmKit, Contacts or MessageUI.
 actor PlanCollector {
     private var actions: [ProposedAction] = []
+    private var plannerIntent: PlannerIntent?
+
+    func setIntent(_ intent: PlannerIntent) { plannerIntent = intent }
+    func takeIntent() -> PlannerIntent? { defer { plannerIntent = nil }; return plannerIntent }
 
     func add(_ payload: ProposedAction.Payload) -> Bool {
         let action = ProposedAction(payload: payload)
@@ -195,7 +199,13 @@ actor PlanCollector {
         return actions
     }
 
-    func reset() { actions = [] }
+    func reset() { actions = []; plannerIntent = nil }
+}
+
+/// "Plan my day" and "Rescue my day" don't create actions. They start the planner, which has its own sheet.
+enum PlannerIntent: Equatable, Sendable {
+    case planDay(mustDos: String?)
+    case rescueDay(minutesBehind: Int?)
 }
 
 // MARK: - Plan shown to the user
@@ -264,6 +274,8 @@ enum DateText {
         let date = Calendar.current.date(from: DateComponents(hour: hour, minute: minute)) ?? .now
         return date.formatted(date: .omitted, time: .shortened)
     }
+
+    static func clock(_ date: Date) -> String { date.formatted(date: .omitted, time: .shortened) }
 
     static func days(_ days: [Locale.Weekday]) -> String {
         let order: [Locale.Weekday] = [.sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday]

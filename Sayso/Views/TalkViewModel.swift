@@ -24,6 +24,14 @@ final class TalkViewModel {
         day = DayStore(life: life)
     }
 
+    enum PlannerStep { case mustDos, focus, behind }
+
+    let planner = PlannerSettings()
+    var planSession: DayPlanSession?
+    var showManualPlan = false
+    private(set) var plannerStep: PlannerStep?
+    private var draftTasks: [PlanTask] = []
+
     private(set) var state: TalkState = .idle
     /// True when the last error was a missing permission, so the error card can offer Settings.
     private(set) var errorNeedsSettings = false
@@ -155,6 +163,7 @@ final class TalkViewModel {
                 self.plan = plan
                 results = nil
                 state = .idle
+            case .planner(let intent): await begin(intent)
             }
         } catch {
             errorNeedsSettings = error is PermissionDenied
@@ -272,6 +281,7 @@ final class TalkViewModel {
 
     private func process(_ text: String) async {
         spoken = text
+        if let step = plannerStep { await handlePlannerAnswer(step, text); return }
         state = .thinking
         do {
             switch try await agent.respond(to: text) {
@@ -281,6 +291,7 @@ final class TalkViewModel {
                 self.plan = plan
                 results = nil
                 state = .idle
+            case .planner(let intent): await begin(intent)
             }
         } catch {
             errorNeedsSettings = error is PermissionDenied
@@ -299,5 +310,134 @@ final class TalkViewModel {
             return
         }
         await process(text)
+    }
+
+    // MARK: Plan my day and Rescue my day
+
+    /// Button or voice. Without Apple Intelligence the manual form takes over.
+    func startPlanning(mustDos: String? = nil) {
+        guard canStartTalking else { return }
+        spoken = "Plan my day"
+        Task { await begin(.planDay(mustDos: mustDos)) }
+    }
+
+    func startRescue(minutes: Int) {
+        guard canStartTalking else { return }
+        spoken = "I'm \(minutes) minutes behind"
+        Task { await begin(.rescueDay(minutesBehind: minutes)) }
+    }
+
+    func handle(_ route: IntentRouter.Route) {
+        switch route {
+        case .plan: startPlanning()
+        case .rescue(let minutes): startRescue(minutes: minutes)
+        }
+    }
+
+    func cancelPlanner() {
+        plannerStep = nil
+        draftTasks = []
+        agent.resetConversation()
+        state = .idle
+    }
+
+    func chooseFocus(_ focus: FocusPreference) { Task { await handlePlannerAnswer(.focus, focus.rawValue) } }
+    func chooseBehind(_ minutes: Int) { Task { await handlePlannerAnswer(.behind, "\(minutes)") } }
+
+    func closePlanSession() {
+        planSession = nil
+        plannerStep = nil
+        draftTasks = []
+        Task { await refreshDay() }
+    }
+
+    /// The manual form's result: no language model involved.
+    func submitManualPlan(tasks: [PlanTask], focus: FocusPreference) async {
+        showManualPlan = false
+        draftTasks = tasks
+        await buildPlan(focus: focus)
+    }
+
+    private func begin(_ intent: PlannerIntent) async {
+        switch intent {
+        case .planDay(let mustDos):
+            guard agent.isModelAvailable else { state = .idle; showManualPlan = true; return }
+            if let mustDos {
+                await handlePlannerAnswer(.mustDos, mustDos)
+            } else {
+                plannerStep = .mustDos
+                state = .question("What must get done today? Say them in any order, with how long each takes and any deadlines.")
+            }
+        case .rescueDay(let minutes):
+            if let minutes {
+                await buildRescue(behind: minutes)
+            } else {
+                plannerStep = .behind
+                state = .question("How far behind are you?")
+            }
+        }
+    }
+
+    private func handlePlannerAnswer(_ step: PlannerStep, _ text: String) async {
+        let lowered = text.lowercased()
+        if ["cancel", "never mind", "nevermind", "forget it", "stop"].contains(where: { lowered.hasPrefix($0) }) {
+            cancelPlanner()
+            return
+        }
+        switch step {
+        case .mustDos:
+            state = .thinking
+            do {
+                let tasks = try await agent.parseTasks(text)
+                guard !tasks.isEmpty else {
+                    plannerStep = .mustDos
+                    state = .question("I didn't catch any tasks. What must get done today?")
+                    return
+                }
+                draftTasks = tasks
+                plannerStep = .focus
+                state = .question("Got \(tasks.count) \(tasks.count == 1 ? "task" : "tasks"). When do you focus best?")
+            } catch {
+                // The model couldn't parse it: fall back to the form.
+                plannerStep = nil
+                state = .idle
+                showManualPlan = true
+            }
+        case .focus:
+            await buildPlan(focus: FocusPreference.parse(text))
+        case .behind:
+            guard let minutes = SpokenMinutes.parse(text) else {
+                state = .question("How many minutes behind are you?")
+                return
+            }
+            await buildRescue(behind: minutes)
+        }
+    }
+
+    private func buildPlan(focus: FocusPreference) async {
+        plannerStep = nil
+        planner.focus = focus
+        state = .thinking
+        let session = DayPlanSession(mode: .plan, tasks: draftTasks, focus: focus, settings: planner.plan)
+        session.transcript = spoken
+        await present(session)
+    }
+
+    private func buildRescue(behind: Int) async {
+        plannerStep = nil
+        state = .thinking
+        let session = DayPlanSession(mode: .rescue(behind: behind), tasks: [], focus: planner.focus, settings: planner.plan)
+        await present(session)
+    }
+
+    private func present(_ session: DayPlanSession) async {
+        do {
+            try await session.prepare(agent: agent)
+            planSession = session
+            state = .idle
+        } catch {
+            errorNeedsSettings = error is PermissionDenied
+            state = .error(Self.message(for: error))
+        }
     }
 }

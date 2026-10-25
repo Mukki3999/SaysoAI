@@ -134,6 +134,14 @@ struct SchedulerTests {
         #expect(r.leftovers.first?.task.minutes == 600 - placed)
     }
 
+    @Test func noTinySlivers() {
+        // Only an 80-minute gap fits part of a 90-minute task; the 10-minute rest is reported, not scattered.
+        let events = [busy("A", t(9), t(16, 30)), busy("B", t(17, 30), t(18))]
+        let r = plan([task("Post", 90, deep: true)], busy: events)
+        #expect(r.blocks.allSatisfy { $0.minutes >= settings.minChunk })
+        #expect(r.leftovers.first?.task.minutes ?? 0 > 0)
+    }
+
     @Test func blocksNeverOverlapEachOtherOrEvents() {
         let events = [busy("Standup", t(9, 30), t(10)), busy("Lunch w/ Sam", t(12, 30), t(13, 30)), busy("1:1", t(15), t(15, 30))]
         let r = plan([task("A", 45, .high), task("B", 90, deep: true), task("C", 30), task("D", 120, .low)], busy: events, focus: .morning)

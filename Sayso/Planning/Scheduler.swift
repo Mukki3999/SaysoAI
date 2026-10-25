@@ -146,9 +146,12 @@ enum Scheduler {
             let before = free
             var sizes = splitSizes(task.minutes, settings: settings)
             var placed: [PlacedBlock] = []
+            var carried = false     // the size left over after a block was squeezed into a smaller gap
 
             while !sizes.isEmpty {
                 let size = sizes.removeFirst()
+                // A sliver left over from a squeezed block isn't worth its own block.
+                if carried, size < settings.minChunk { sizes.insert(size, at: 0); break }
                 if let start = pickSlot(size: size, free: free, limit: limit, task: task, focus: focusWindow, settings: settings) {
                     let end = start.addingTimeInterval(Double(size) * 60)
                     free = subtract(free, Interval(start: start.addingTimeInterval(-Double(settings.buffer) * 60),
@@ -164,6 +167,7 @@ enum Scheduler {
                                                    end: end.addingTimeInterval(Double(settings.buffer) * 60)))
                     placed.append(PlacedBlock(task: task, start: gap.start, end: end, reason: ""))
                     sizes.insert(size - take, at: 0)
+                    carried = true
                     continue
                 }
                 sizes.insert(size, at: 0)

@@ -5,6 +5,7 @@ enum AgentOutcome {
     case plan(ActionPlan)
     case question(String)   // the model needs one more detail
     case answer(String)     // a reply to a question about the user's day
+    case planner(PlannerIntent)   // start Plan my day or Rescue my day
 }
 
 @MainActor @Observable
@@ -56,6 +57,10 @@ final class AgentService {
         do {
             let response = try await session.respond(to: transcript, options: GenerationOptions(temperature: 0.2))
             let actions = await collector.drain()
+            if let intent = await collector.takeIntent() {
+                self.session = nil
+                return .planner(intent)
+            }
             if actions.isEmpty {
                 if editing, response.content.contains("NOT_EDIT") {
                     self.session = nil
@@ -83,6 +88,67 @@ final class AgentService {
         LanguageModelSession(model: model, tools: tools, instructions: instructions())
     }
 
+    // MARK: Planner helpers (the model parses and words things; the Scheduler does all the scheduling)
+
+    @Generable
+    enum ParsedPriority { case low, medium, high }
+
+    @Generable
+    struct ParsedTask {
+        @Guide(description: "Short task name, like 'Finish report'")
+        var title: String
+        @Guide(description: "Minutes it takes. Use what the user said, otherwise a sensible estimate: quick call or email 15, errand 30, focused work 60")
+        var minutes: Int
+        @Guide(description: "high if the user calls it urgent, important or a must, low if optional, otherwise medium")
+        var priority: ParsedPriority
+        @Guide(description: "Deadline today in local yyyy-MM-dd'T'HH:mm:ss, only if the user gave a time it is due by")
+        var deadline: String?
+        @Guide(description: "True for work that needs concentration: writing, coding, studying, designing, planning")
+        var deep: Bool
+    }
+
+    @Generable
+    struct ParsedTasks {
+        var tasks: [ParsedTask]
+    }
+
+    @Generable
+    struct ReasonLines {
+        @Guide(description: "One short line per block, in the same order")
+        var lines: [String]
+    }
+
+    /// Turns "finish the deck by 3, gym, call mom for 10 minutes" into tasks. Never schedules anything.
+    func parseTasks(_ text: String) async throws -> [PlanTask] {
+        let session = LanguageModelSession(model: model, instructions: """
+            You turn a spoken to-do list into tasks. Now: \(DateText.promptNow()). Do not schedule anything or pick times to do the tasks. \
+            One task per item. Keep the user's wording short. Do not invent tasks.
+            """)
+        do {
+            let parsed = try await session.respond(to: text, generating: ParsedTasks.self, options: GenerationOptions(temperature: 0.1)).content
+            return parsed.tasks.compactMap { t in
+                let title = t.title.trimmingCharacters(in: .whitespaces)
+                guard !title.isEmpty else { return nil }
+                let priority: TaskPriority = switch t.priority { case .low: .low; case .medium: .medium; case .high: .high }
+                return PlanTask(title: title, minutes: min(max(t.minutes, 5), 480), priority: priority,
+                                deadline: t.deadline.flatMap(DateText.parse), deep: t.deep)
+            }
+        } catch let error as LanguageModelSession.GenerationError {
+            throw ToolError(Self.message(for: error))
+        }
+    }
+
+    /// Rewords the Scheduler's facts into short lines. Returns nil (keep the originals) unless every line comes back sane.
+    func rewordReasons(_ facts: [String]) async -> [String]? {
+        guard isModelAvailable, !facts.isEmpty, facts.count <= 12 else { return nil }
+        let session = LanguageModelSession(model: model, instructions: "For each numbered scheduling fact, write one plain line of at most 12 words saying why the task sits there. Use only the facts given. No times, no emojis.")
+        let prompt = facts.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n")
+        guard let lines = try? await session.respond(to: prompt, generating: ReasonLines.self, options: GenerationOptions(temperature: 0.2)).content.lines,
+              lines.count == facts.count,
+              lines.allSatisfy({ !$0.trimmingCharacters(in: .whitespaces).isEmpty && $0.count <= 100 }) else { return nil }
+        return lines.map { $0.trimmingCharacters(in: .whitespaces) }
+    }
+
     private func makeEditSession() -> LanguageModelSession {
         LanguageModelSession(
             model: model,
@@ -107,6 +173,8 @@ final class AgentService {
             DraftMessageTool(collector: collector),
             DraftEmailTool(collector: collector),
             OpenDirectionsTool(collector: collector),
+            PlanMyDayTool(collector: collector),
+            RescueMyDayTool(collector: collector),
             GetAgendaTool()
         ]
     }
@@ -125,6 +193,7 @@ final class AgentService {
         - Write dates and times as local yyyy-MM-dd'T'HH:mm:ss.
         - Bare hours with no AM or PM: alarms 4 to 11 are AM. Events and reminders 1 to 6 are PM, 7 to 11 are AM unless the request says tonight, dinner or evening. 12 is noon.
         - If the user gives no end time, leave end empty. Never invent locations, names or notes.
+        - "Plan my day" or "organize my day" = planMyDay. "I'm 30 minutes behind" or "re-plan the rest of my day" about their own schedule = rescueDay. A message to someone ("text Sam I'm late") is draftMessage, not rescueDay.
         - Questions about the user's schedule ("what's on tomorrow", "am I free Saturday"): call getAgenda for each day asked, then answer in one or two short sentences. Do not call action tools for questions.
         - Make sensible choices instead of asking. Ask one short clarifying question, with no tool calls, only when a required detail is truly missing, such as who to message or which day.
         - Write message and email text in the user's voice, short and natural.

@@ -4,6 +4,15 @@ import SwiftUI
 struct SaysoApp: App {
     @State private var model = TalkViewModel()
     @AppStorage("hasOnboarded") private var hasOnboarded = false
+    @State private var router = IntentRouter.shared
+    @Environment(\.scenePhase) private var scenePhase
+
+    /// Picks up "Plan my day" / "Rescue my day" requests from Shortcuts and voice.
+    private func consumeRoute() {
+        guard hasOnboarded, let route = router.pending else { return }
+        router.pending = nil
+        model.handle(route)
+    }
 
     /// Debug-only: lets the simulator, which has no Apple Intelligence, show the main UI.
     private static var skipAvailabilityCheck: Bool {
@@ -19,6 +28,7 @@ struct SaysoApp: App {
         #if DEBUG
         let demo = ProcessInfo.processInfo.environment["SAYSO_DEMO_PLAN"]
         let cal = Calendar.current
+        if demo == "plan" || demo == "rescue" { model.planSession = DayPlanSession.demo(rescue: demo == "rescue"); return }
         if demo == "edit" {
             let day = cal.startOfDay(for: .now)
             func at(_ h: Int, _ m: Int = 0) -> Date { cal.date(bySettingHour: h, minute: m, second: 0, of: day)! }
@@ -51,7 +61,7 @@ struct SaysoApp: App {
         WindowGroup {
             Group {
                 if !model.agent.isModelAvailable && !Self.skipAvailabilityCheck {
-                    UnsupportedDeviceView(reason: model.agent.unavailableReason)
+                    UnsupportedDeviceView(reason: model.agent.unavailableReason, model: model)
                 } else if !hasOnboarded {
                     OnboardingView { hasOnboarded = true }
                 } else {
@@ -61,6 +71,9 @@ struct SaysoApp: App {
             }
             .tint(.white)
             .preferredColorScheme(.dark)
+            .task { consumeRoute() }
+            .onChange(of: router.pending) { consumeRoute() }
+            .onChange(of: scenePhase) { if scenePhase == .active { consumeRoute() } }
         }
     }
 }
