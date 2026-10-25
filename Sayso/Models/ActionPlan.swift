@@ -208,8 +208,14 @@ enum PlannerIntent: Equatable, Sendable {
 
 @MainActor @Observable
 final class ActionPlan: Identifiable {
+    enum Status { case pending, done, cancelled, replaced }
+
     var actions: [ProposedAction]
     let transcript: String
+    var status: Status = .pending
+    /// Filled in once the user approves and the actions have run.
+    var results: [ActionResult]?
+    var isExecuting = false
 
     init(actions: [ProposedAction], transcript: String) {
         self.actions = actions

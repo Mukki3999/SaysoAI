@@ -6,16 +6,17 @@ import UIKit
 
 enum TalkState: Equatable {
     case idle, listening, thinking
-    case question(String)
-    case answer(String)
-    case done(String)
-    case error(String)
 }
 
 struct PendingPhoto: Identifiable {
     let id = UUID()
     let data: Data
-    var image: UIImage? { UIImage(data: data) }
+    let image: UIImage?
+
+    init(data: Data) {
+        self.data = data
+        self.image = UIImage(data: data)
+    }
 }
 
 struct MenuSeed {
@@ -29,6 +30,7 @@ final class TalkViewModel {
     let agent = AgentService()
     let life: LifeStore
     let day: DayStore
+    private let speaker = Speaker()
 
     init() {
         let life = LifeStore()
@@ -38,47 +40,224 @@ final class TalkViewModel {
 
     enum PlannerStep { case mustDos, focus, behind }
 
+    // MARK: Conversation
+
+    private(set) var messages: [ChatMessage] = []
+    private(set) var state: TalkState = .idle
+    private(set) var thinkingStatus = "Thinking…"
+    /// What is typed in the composer.
+    var input = ""
+    /// A photo waiting in the composer for the user to say what to do with it.
+    var attachment: PendingPhoto?
+    private var lastUserText = ""
+    private var requestID = 0
+
+    var speakReplies = UserDefaults.standard.bool(forKey: "sayso.speakReplies") {
+        didSet {
+            UserDefaults.standard.set(speakReplies, forKey: "sayso.speakReplies")
+            if !speakReplies { speaker.stop() }
+        }
+    }
+
+    // Planner and menu
     let planner = PlannerSettings()
     var planSession: DayPlanSession?
     var showManualPlan = false
     var showMenu = false
     var menuSeed: MenuSeed?
-    var pendingPhoto: PendingPhoto?
-    private var requestID = 0
     private(set) var plannerStep: PlannerStep?
     private var draftTasks: [PlanTask] = []
 
-    private(set) var state: TalkState = .idle
-    /// True when the last error was a missing permission, so the error card can offer Settings.
-    private(set) var errorNeedsSettings = false
-    private(set) var spoken = ""
-    var plan: ActionPlan?
-    private(set) var results: [ActionResult]?
-    private(set) var isExecuting = false
+    /// The proposal being looked at in the full review sheet.
+    var reviewing: ActionPlan?
     private let executor = ActionExecutor()
     private var pressing = false
     private var startTask: Task<Void, Never>?
+
+    var canSend: Bool { state == .idle }
 
     var waveMode: WaveView.Mode {
         switch state {
         case .listening: .listening
         case .thinking: .thinking
-        default: .idle
+        case .idle: .idle
         }
     }
+
+    // MARK: Messages
+
+    private func append(_ message: ChatMessage) { messages.append(message) }
+
+    /// An assistant reply. Read aloud if the user asked for that.
+    func say(_ text: String, choices: [Choice] = []) {
+        clearChoices()
+        append(ChatMessage(role: .assistant, content: .text(text), choices: choices))
+        state = .idle
+        if speakReplies { speaker.speak(text) }
+    }
+
+    private func fail(_ error: Error) {
+        let needsSettings = error is PermissionDenied || speech.permissionDenied
+        clearChoices()
+        append(ChatMessage(role: .assistant, content: .error(Self.message(for: error), needsSettings: needsSettings)))
+        state = .idle
+    }
+
+    private func fail(message: String) {
+        clearChoices()
+        append(ChatMessage(role: .assistant, content: .error(message, needsSettings: false)))
+        state = .idle
+    }
+
+    private func clearChoices() {
+        for i in messages.indices where !messages[i].choices.isEmpty { messages[i].choices = [] }
+    }
+
+    private static func message(for error: Error) -> String {
+        if let e = error as? LocalizedError, let d = e.errorDescription { return d }
+        // Always say what failed, so a report can be acted on.
+        return "Something went wrong. Try again.\n\(Diagnostics.describe(error))"
+    }
+
+    /// Starts over with an empty thread and the home screen.
+    func newChat() {
+        requestID += 1
+        speaker.stop()
+        agent.resetConversation()
+        plannerStep = nil
+        draftTasks = []
+        attachment = nil
+        input = ""
+        messages = []
+        if state != .idle { Task { await speech.cancel() } }
+        state = .idle
+        Task { await refreshDay() }
+    }
+
+    /// Stops waiting on the model.
+    func cancelThinking() {
+        requestID += 1
+        agent.resetConversation()
+        plannerStep = nil
+        state = .idle
+    }
+
+    func retry() {
+        guard canSend, !lastUserText.isEmpty else { return }
+        if case .error = messages.last?.content { messages.removeLast() }
+        Task { await process(lastUserText) }
+    }
+
+    // MARK: Sending
+
+    /// The composer's Send button: text, or a photo with optional text.
+    func submitComposer() {
+        let text = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let photo = attachment {
+            attachment = nil
+            input = ""
+            Task { await sendPhoto(photo, text: text) }
+        } else if !text.isEmpty {
+            input = ""
+            Task { await send(text) }
+        }
+    }
+
+    func send(_ text: String) async {
+        let said = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !said.isEmpty, canSend else { return }
+        speaker.stop()
+        clearChoices()
+        append(ChatMessage(role: .user, content: .text(said)))
+        await process(said)
+    }
+
+    /// Tappable suggestion: same path as typing.
+    func ask(_ text: String) async { await send(text) }
+
+    private func process(_ text: String) async {
+        lastUserText = text
+        if let step = plannerStep { await handlePlannerAnswer(step, text); return }
+        state = .thinking
+        thinkingStatus = "Thinking…"
+        requestID += 1
+        let id = requestID
+        let agent = self.agent
+        let context = conversationContext()
+        let hasPending = hasPendingProposal
+        do {
+            let outcome = try await withTimeout(seconds: 60) {
+                try await agent.respond(to: text, forceMain: hasPending, context: context)
+            }
+            guard id == requestID, state == .thinking else { return }   // cancelled or replaced meanwhile
+            await apply(outcome)
+        } catch {
+            guard id == requestID else { return }
+            agent.resetConversation()
+            fail(error)
+        }
+    }
+
+    private func apply(_ outcome: AgentOutcome) async {
+        switch outcome {
+        case .question(let q): say(q)
+        case .answer(let a): say(a)
+        case .plan(let plan): propose(plan)
+        case .planner(let intent): await begin(intent)
+        }
+    }
+
+    /// Puts a proposal in the thread. A newer proposal replaces one that was never approved.
+    func propose(_ plan: ActionPlan) {
+        clearChoices()
+        for m in messages { if case .proposal(let old) = m.content, old.status == .pending { old.status = .replaced } }
+        let n = plan.actions.count
+        let lead = n == 1 ? "Got it. Approve it when it looks right." : "Here's what I'll set up. Approve when it looks right."
+        append(ChatMessage(role: .assistant, content: .proposal(plan)))
+        state = .idle
+        if speakReplies { speaker.speak(lead) }
+    }
+
+    /// For the simulator's demo hooks.
+    func show(_ plan: ActionPlan) {
+        append(ChatMessage(role: .user, content: .text(plan.transcript)))
+        propose(plan)
+    }
+
+    private var hasPendingProposal: Bool {
+        messages.contains { if case .proposal(let p) = $0.content { p.status == .pending } else { false } }
+    }
+
+    /// A short summary of the last few turns, so "make it 6" or "and remind me" has something to refer to.
+    private func conversationContext() -> String? {
+        var lines: [String] = []
+        // The newest user message is the request itself, so it is left out.
+        for m in messages.dropLast().suffix(6) {
+            switch (m.role, m.content) {
+            case (.user, .text(let t)): lines.append("User: \(t.prefix(120))")
+            case (.user, .photo(_, let c)): lines.append("User shared a photo. \(c.prefix(80))")
+            case (.assistant, .text(let t)): lines.append("Sayso: \(t.prefix(140))")
+            case (.assistant, .proposal(let p)):
+                let items = p.actions.map { $0.card }.joined(separator: "; ")
+                switch p.status {
+                case .pending: lines.append("Sayso proposed, not yet approved: \(items.prefix(260))")
+                case .done: lines.append("Sayso did: \(items.prefix(260))")
+                case .cancelled, .replaced: break
+                }
+            case (.assistant, .planCard): lines.append("Sayso made a plan for the day.")
+            default: break
+            }
+        }
+        let text = lines.joined(separator: "\n")
+        return text.isEmpty ? nil : String(text.suffix(700))
+    }
+
+    // MARK: Voice
 
     /// Tap the mic once for hands-free: Sayso stops itself after you pause. Or hold and release.
     private(set) var handsFree = false
     private var pressStart = Date.now
     private var monitorTask: Task<Void, Never>?
-
-    var caption: String {
-        switch state {
-        case .listening: handsFree ? "Listening… pause when you're done, or tap to finish" : "Release when you're done"
-        case .thinking: ""
-        default: "Hold to talk, or tap once"
-        }
-    }
 
     func pressBegan() {
         // A tap while hands-free listening means "I'm done".
@@ -86,10 +265,11 @@ final class TalkViewModel {
             Task { await finishListening() }
             return
         }
-        guard !pressing, canStartTalking else { return }
+        guard !pressing, canSend else { return }
         pressing = true
         handsFree = false
         pressStart = .now
+        speaker.stop()
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         startTask = Task {
             do {
@@ -99,7 +279,7 @@ final class TalkViewModel {
             } catch {
                 pressing = false
                 handsFree = false
-                state = .error(Self.message(for: error))
+                fail(error)
             }
         }
     }
@@ -145,34 +325,44 @@ final class TalkViewModel {
         }
     }
 
-    private static func message(for error: Error) -> String {
-        if let e = error as? LocalizedError, let d = e.errorDescription { return d }
-        // Always say what failed, so a report can be acted on.
-        return "Something went wrong. Try again.\n\(Diagnostics.describe(error))"
+    private func finishListening() async {
+        guard state == .listening else { return }
+        monitorTask?.cancel()
+        handsFree = false
+        state = .thinking
+        thinkingStatus = "Listening…"
+        let text = await speech.stop()
+        state = .idle
+        guard text.count > 1 else {
+            fail(message: "I didn't catch that. Tap the mic and try again, or type it.")
+            return
+        }
+        await send(text)
     }
 
-    func dismissError() { state = .idle; errorNeedsSettings = false }
+    // MARK: Photos
 
-    /// A photo was chosen. Ask what to do with it instead of guessing.
     func loadPhoto(_ item: PhotosPickerItem) async {
         guard let data = try? await item.loadTransferable(type: Data.self) else {
-            state = .error("Sayso couldn't open that photo.")
+            fail(message: "Sayso couldn't open that photo.")
             return
         }
         receivePhoto(data)
     }
 
+    /// The photo waits in the composer so the user can say what they want.
     func receivePhoto(_ data: Data) {
-        guard canStartTalking else { return }
-        pendingPhoto = PendingPhoto(data: data)
+        attachment = PendingPhoto(data: data)
     }
 
     /// Menus go to the Menu Helper. Anything else is read on the iPhone and turned into actions.
-    func sendPhoto(_ photo: PendingPhoto, text: String) async {
-        pendingPhoto = nil
-        let said = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        spoken = said.isEmpty ? "Reading your photo…" : said
+    func sendPhoto(_ photo: PendingPhoto, text said: String) async {
+        guard canSend else { return }
+        clearChoices()
+        if let image = photo.image { append(ChatMessage(role: .user, content: .photo(image, caption: said))) }
+        lastUserText = said
         state = .thinking
+        thinkingStatus = "Reading your photo…"
         requestID += 1
         let id = requestID
         do {
@@ -181,7 +371,7 @@ final class TalkViewModel {
             if MenuDetector.looksLikeMenu(scan.lines, userText: said) || said == "What should I eat?" {
                 menuSeed = MenuSeed(data: photo.data, text: said == "What should I eat?" ? "" : said)
                 showMenu = true
-                state = .idle
+                say("That looks like a menu. I've opened it so you can tell me what you're in the mood for.")
                 return
             }
             let text = String(scan.lines.map(\.text).joined(separator: "\n").prefix(1800))
@@ -192,94 +382,61 @@ final class TalkViewModel {
             let prompt = "The user shared a photo. This is the text on it:\n\"\"\"\n\(text)\n\"\"\"\n\(ask)"
             let agent = self.agent
             let label = "Photo: \(firstLine.prefix(60))"
+            thinkingStatus = "Thinking…"
             let outcome = try await withTimeout(seconds: 60) { try await agent.respond(to: prompt, shownAs: label) }
             guard id == requestID, state == .thinking else { return }
             await apply(outcome)
         } catch {
             guard id == requestID else { return }
-            errorNeedsSettings = error is PermissionDenied
-            state = .error(Self.message(for: error))
+            fail(error)
         }
     }
 
-    private func apply(_ outcome: AgentOutcome) async {
-        switch outcome {
-        case .question(let q): state = .question(q)
-        case .answer(let a): state = .answer(a)
-        case .plan(let plan):
-            self.plan = plan
-            results = nil
-            state = .idle
-        case .planner(let intent): await begin(intent)
-        }
-    }
+    // MARK: Proposals
 
-    /// Stops waiting on the model and returns to the home screen.
-    func cancelThinking() {
-        requestID += 1
-        agent.resetConversation()
-        plannerStep = nil
-        state = .idle
-    }
-
-    // MARK: Plan lifecycle
-
-    func approve() async {
-        guard let plan, !isExecuting else { return }
-        isExecuting = true
-        let approved = plan.approve()
-        let ran = await executor.run(approved)
-        results = ran
+    func approve(_ plan: ActionPlan) async {
+        guard plan.status == .pending, !plan.isExecuting else { return }
+        plan.isExecuting = true
+        let ran = await executor.run(plan.approve())
+        plan.results = ran
+        plan.status = .done
+        plan.isExecuting = false
         life.add(ran.filter { if case .failed = $0.outcome { false } else { true } }.map(\.action))
-        isExecuting = false
         if ran.count == 1, case .ready(let deferred) = ran[0].outcome {
-            performDeferred(deferred, resultID: ran[0].id)
+            performDeferred(deferred, resultID: ran[0].id, in: plan)
         }
+        agent.resetConversation()
+        Task { await refreshDay() }
         UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
 
-    func cancelPlan() {
-        Task { await refreshDay() }
-        plan = nil
-        results = nil
+    func cancel(_ plan: ActionPlan) {
+        guard plan.status == .pending else { return }
+        plan.status = .cancelled
+        reviewing = nil
         agent.resetConversation()
-        state = .idle
     }
 
-    func closePlan() {
-        Task { await refreshDay() }
-        let created = results?.filter { if case .failed = $0.outcome { false } else { true } }.count ?? 0
-        plan = nil
-        results = nil
-        agent.resetConversation()
-        guard created > 0 else { state = .idle; return }
-        state = .done(created == 1 ? "Done" : "\(created) things done")
-        Task {
-            try? await Task.sleep(for: .seconds(2.5))
-            if case .done = state { state = .idle }
-        }
-    }
-
-    func undo(_ id: ActionResult.ID) async {
-        guard let i = results?.firstIndex(where: { $0.id == id }),
-              case .completed(let undo?) = results?[i].outcome else { return }
+    func undo(_ id: ActionResult.ID, in plan: ActionPlan) async {
+        guard let i = plan.results?.firstIndex(where: { $0.id == id }),
+              case .completed(let undo?) = plan.results?[i].outcome else { return }
         do {
-            let actionID = results?[i].action.id
+            let actionID = plan.results?[i].action.id
             try await undo()
             if let actionID { life.remove(actionID) }
-            results?.remove(at: i)
+            plan.results?.remove(at: i)
             Task { await refreshDay() }
         } catch {
-            results?[i].outcome = .failed("Couldn't undo. Remove it in the \(results?[i].symbol == "calendar" ? "Calendar" : "system") app.", needsSettings: false)
+            plan.results?[i].outcome = .failed("Couldn't undo. Remove it in the \(plan.results?[i].symbol == "calendar" ? "Calendar" : "system") app.", needsSettings: false)
         }
     }
 
-    /// Composer sheets are presented from TalkView, so they never stack on the confirmation sheet.
+    /// Composer sheets are presented from the chat screen, so they never stack on the review sheet.
     var messageRequest: MessageComposeRequest?
     var emailRequest: EmailComposeRequest?
     var mailtoURL: URL?
 
-    func performDeferred(_ deferred: DeferredAction, resultID: ActionResult.ID) {
+    func performDeferred(_ deferred: DeferredAction, resultID: ActionResult.ID, in plan: ActionPlan) {
         Task {
             do {
                 switch deferred {
@@ -288,11 +445,11 @@ final class TalkViewModel {
                     guard MFMessageComposeViewController.canSendText() else {
                         throw ToolError("This device can't send text messages.")
                     }
-                    plan = nil
+                    reviewing = nil
                     messageRequest = request
                 case .email(let d):
                     let request = try await EmailAction.prepare(d)
-                    plan = nil
+                    reviewing = nil
                     if MFMailComposeViewController.canSendMail() {
                         emailRequest = request
                     } else {
@@ -308,72 +465,27 @@ final class TalkViewModel {
                     try await DirectionsAction.open(d)
                 }
             } catch {
-                guard let i = results?.firstIndex(where: { $0.id == resultID }) else { return }
-                results?[i].outcome = .failed(error.localizedDescription, needsSettings: error is PermissionDenied)
+                guard let i = plan.results?.firstIndex(where: { $0.id == resultID }) else { return }
+                plan.results?[i].outcome = .failed(error.localizedDescription, needsSettings: error is PermissionDenied)
             }
-        }
-    }
-
-    private var canStartTalking: Bool {
-        switch state {
-        case .idle, .done, .question, .answer: true
-        case .listening, .thinking, .error: false
         }
     }
 
     func refreshDay() async { await day.refresh(agent: agent) }
     func connectDay() async { await day.connect(agent: agent) }
 
-    /// Tappable suggestion: same path as speech.
-    func ask(_ text: String) async {
-        guard canStartTalking else { return }
-        await process(text)
-    }
-
-    private func process(_ text: String) async {
-        spoken = text
-        if let step = plannerStep { await handlePlannerAnswer(step, text); return }
-        state = .thinking
-        requestID += 1
-        let id = requestID
-        let agent = self.agent
-        do {
-            let outcome = try await withTimeout(seconds: 60) { try await agent.respond(to: text) }
-            guard id == requestID, state == .thinking else { return }   // cancelled or replaced meanwhile
-            await apply(outcome)
-        } catch {
-            guard id == requestID else { return }
-            agent.resetConversation()
-            errorNeedsSettings = error is PermissionDenied
-            state = .error(Self.message(for: error))
-        }
-    }
-
-    private func finishListening() async {
-        guard state == .listening else { return }
-        monitorTask?.cancel()
-        handsFree = false
-        state = .thinking
-        let text = await speech.stop()
-        guard text.count > 1 else {
-            state = .error("Didn't catch that.")
-            return
-        }
-        await process(text)
-    }
-
     // MARK: Plan my day and Rescue my day
 
     /// Button or voice. Without Apple Intelligence the manual form takes over.
     func startPlanning(mustDos: String? = nil) {
-        guard canStartTalking else { return }
-        spoken = "Plan my day"
+        guard canSend else { return }
+        append(ChatMessage(role: .user, content: .text("Plan my day")))
         Task { await begin(.planDay(mustDos: mustDos)) }
     }
 
     func startRescue(minutes: Int) {
-        guard canStartTalking else { return }
-        spoken = "I'm \(minutes) minutes behind"
+        guard canSend else { return }
+        append(ChatMessage(role: .user, content: .text(minutes == 0 ? "Re-plan the rest of my day" : "I'm \(minutes) minutes behind")))
         Task { await begin(.rescueDay(minutesBehind: minutes)) }
     }
 
@@ -384,17 +496,33 @@ final class TalkViewModel {
         }
     }
 
+    func choose(_ choice: Choice) {
+        switch choice.action {
+        case .focus(let f):
+            clearChoices()
+            append(ChatMessage(role: .user, content: .text(choice.label)))
+            Task { await handlePlannerAnswer(.focus, f.rawValue) }
+        case .behind(let m):
+            clearChoices()
+            append(ChatMessage(role: .user, content: .text(choice.label)))
+            Task { await handlePlannerAnswer(.behind, "\(m)") }
+        case .send(let text):
+            Task { await send(text) }
+        }
+    }
+
     func cancelPlanner() {
         plannerStep = nil
         draftTasks = []
         agent.resetConversation()
-        state = .idle
+        say("No problem. I stopped planning.")
     }
 
-    func chooseFocus(_ focus: FocusPreference) { Task { await handlePlannerAnswer(.focus, focus.rawValue) } }
-    func chooseBehind(_ minutes: Int) { Task { await handlePlannerAnswer(.behind, "\(minutes)") } }
-
     func closePlanSession() {
+        if let session = planSession, session.committedCount > 0 {
+            let n = session.committedCount
+            say("Done. \(n) \(n == 1 ? "change" : "changes") in your “\(PlanningCalendar.calendarName)” calendar. You can undo or remove them any time.")
+        }
         planSession = nil
         plannerStep = nil
         draftTasks = []
@@ -416,14 +544,14 @@ final class TalkViewModel {
                 await handlePlannerAnswer(.mustDos, mustDos)
             } else {
                 plannerStep = .mustDos
-                state = .question("What must get done today? Say them in any order, with how long each takes and any deadlines.")
+                say("What must get done today? Tell me in any order, with how long each takes and any deadlines.")
             }
         case .rescueDay(let minutes):
             if let minutes {
                 await buildRescue(behind: minutes)
             } else {
                 plannerStep = .behind
-                state = .question("How far behind are you?")
+                say("How far behind are you?", choices: [15, 30, 45, 60, 90].map { Choice(label: "\($0) min", action: .behind($0)) })
             }
         }
     }
@@ -437,16 +565,18 @@ final class TalkViewModel {
         switch step {
         case .mustDos:
             state = .thinking
+            thinkingStatus = "Reading your list…"
             do {
                 let tasks = try await agent.parseTasks(text)
                 guard !tasks.isEmpty else {
                     plannerStep = .mustDos
-                    state = .question("I didn't catch any tasks. What must get done today?")
+                    say("I didn't catch any tasks. What must get done today?")
                     return
                 }
                 draftTasks = tasks
                 plannerStep = .focus
-                state = .question("Got \(tasks.count) \(tasks.count == 1 ? "task" : "tasks"). When do you focus best?")
+                say("Got \(tasks.count) \(tasks.count == 1 ? "task" : "tasks"). When do you focus best?",
+                    choices: FocusPreference.allCases.map { Choice(label: $0 == .none ? "No preference" : $0.label, action: .focus($0)) })
             } catch {
                 // The model couldn't parse it: fall back to the form.
                 plannerStep = nil
@@ -457,7 +587,7 @@ final class TalkViewModel {
             await buildPlan(focus: FocusPreference.parse(text))
         case .behind:
             guard let minutes = SpokenMinutes.parse(text) else {
-                state = .question("How many minutes behind are you?")
+                say("How many minutes behind are you?", choices: [15, 30, 45, 60, 90].map { Choice(label: "\($0) min", action: .behind($0)) })
                 return
             }
             await buildRescue(behind: minutes)
@@ -468,14 +598,15 @@ final class TalkViewModel {
         plannerStep = nil
         planner.focus = focus
         state = .thinking
+        thinkingStatus = "Planning your day…"
         let session = DayPlanSession(mode: .plan, tasks: draftTasks, focus: focus, settings: planner.plan)
-        session.transcript = spoken
         await present(session)
     }
 
     private func buildRescue(behind: Int) async {
         plannerStep = nil
         state = .thinking
+        thinkingStatus = "Re-planning the rest of today…"
         let session = DayPlanSession(mode: .rescue(behind: behind), tasks: [], focus: planner.focus, settings: planner.plan)
         await present(session)
     }
@@ -483,11 +614,12 @@ final class TalkViewModel {
     private func present(_ session: DayPlanSession) async {
         do {
             try await session.prepare(agent: agent)
+            clearChoices()
+            append(ChatMessage(role: .assistant, content: .planCard(session)))
             planSession = session
             state = .idle
         } catch {
-            errorNeedsSettings = error is PermissionDenied
-            state = .error(Self.message(for: error))
+            fail(error)
         }
     }
 }

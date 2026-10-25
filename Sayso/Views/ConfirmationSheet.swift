@@ -10,10 +10,10 @@ struct ConfirmationSheet: View {
         ZStack {
             Color.black.ignoresSafeArea()
             VStack(spacing: 0) {
-                if let results = model.results { doneHeader(results) } else { reviewHeader }
+                if let results = plan.results { doneHeader(results) } else { reviewHeader }
                 ScrollView {
                     VStack(spacing: 14) {
-                        if let results = model.results {
+                        if let results = plan.results {
                             ForEach(Array(results.enumerated()), id: \.element.id) { i, r in
                                 resultCard(r).staggerIn(i)
                             }
@@ -39,11 +39,11 @@ struct ConfirmationSheet: View {
         .presentationDragIndicator(.visible)
         .presentationBackground(.black)
         .presentationCornerRadius(36)
-        .interactiveDismissDisabled(model.isExecuting)
+        .interactiveDismissDisabled(plan.isExecuting)
         .sheet(item: $editing) { action in
             ActionEditor(action: action,
                          onSave: { plan.update($0) },
-                         onRemove: { plan.remove(action.id); if plan.actions.isEmpty { model.cancelPlan() } })
+                         onRemove: { plan.remove(action.id); if plan.actions.isEmpty { model.cancel(plan) } })
         }
     }
 
@@ -107,7 +107,7 @@ struct ConfirmationSheet: View {
         .overlay(alignment: .topTrailing) {
             Button {
                 plan.remove(action.id)
-                if plan.actions.isEmpty { model.cancelPlan() }
+                if plan.actions.isEmpty { model.cancel(plan) }
             } label: {
                 Image(systemName: "xmark").font(.caption.weight(.bold)).foregroundStyle(.black.opacity(0.5))
                     .frame(width: 30, height: 30).background(Color.black.opacity(0.06), in: Circle())
@@ -133,12 +133,12 @@ struct ConfirmationSheet: View {
                 Label(Self.doneText(r.action), systemImage: "checkmark.circle.fill")
                     .font(.subheadline.weight(.medium)).foregroundStyle(.black)
                 Spacer()
-                if undo != nil { pill("Undo") { Task { await model.undo(r.id) } } }
+                if undo != nil { pill("Undo") { Task { await model.undo(r.id, in: plan) } } }
             case .ready(let deferred):
                 Label(Self.readyText(deferred), systemImage: "arrow.up.forward.circle")
                     .font(.subheadline.weight(.medium)).foregroundStyle(.black)
                 Spacer()
-                pill(Self.readyButton(deferred)) { model.performDeferred(deferred, resultID: r.id) }
+                pill(Self.readyButton(deferred)) { model.performDeferred(deferred, resultID: r.id, in: plan) }
             case .failed(let message, let needsSettings):
                 Label(message, systemImage: "exclamationmark.circle.fill")
                     .font(.footnote).foregroundStyle(.black.opacity(0.7)).lineLimit(3)
@@ -160,7 +160,7 @@ struct ConfirmationSheet: View {
         .buttonStyle(CardPressStyle())
     }
 
-    private static func doneText(_ a: ProposedAction) -> String {
+    static func doneText(_ a: ProposedAction) -> String {
         switch a.payload {
         case .calendar: "Added to Calendar"
         case .reminder: "Added to Reminders"
@@ -172,7 +172,7 @@ struct ConfirmationSheet: View {
         }
     }
 
-    private static func readyText(_ d: DeferredAction) -> String {
+    static func readyText(_ d: DeferredAction) -> String {
         switch d {
         case .message: "Draft ready"
         case .email: "Draft ready"
@@ -180,7 +180,7 @@ struct ConfirmationSheet: View {
         }
     }
 
-    private static func readyButton(_ d: DeferredAction) -> String {
+    static func readyButton(_ d: DeferredAction) -> String {
         switch d {
         case .message, .email: "Review & send"
         case .directions: "Open Maps"
@@ -191,21 +191,21 @@ struct ConfirmationSheet: View {
 
     private var footer: some View {
         VStack(spacing: 6) {
-            if model.results != nil {
-                bigButton("Close") { model.closePlan() }
+            if plan.results != nil {
+                bigButton("Close") { model.reviewing = nil }
             } else {
                 if plan.needsSpanChoice {
                     Text("Choose how to apply the repeating event first.")
                         .font(.footnote).foregroundStyle(.white.opacity(0.55))
                 }
-                bigButton(plan.actions.count > 1 ? "Approve all" : "Approve", busy: model.isExecuting) {
-                    Task { await model.approve() }
+                bigButton(plan.actions.count > 1 ? "Approve all" : "Approve", busy: plan.isExecuting) {
+                    Task { await model.approve(plan) }
                 }
                 .opacity(plan.needsSpanChoice ? 0.35 : 1)
                 .disabled(plan.needsSpanChoice)
-                Button("Cancel") { model.cancelPlan() }
+                Button("Cancel") { model.cancel(plan) }
                     .font(.body).foregroundStyle(.white.opacity(0.6)).padding(.vertical, 10)
-                    .disabled(model.isExecuting)
+                    .disabled(plan.isExecuting)
             }
         }
         .padding(.horizontal, 24).padding(.top, 6).padding(.bottom, 10)

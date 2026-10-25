@@ -1,0 +1,312 @@
+import SwiftUI
+
+/// One entry in the thread. Plain text for conversation, white cards for anything you act on.
+struct MessageRow: View {
+    @Bindable var model: TalkViewModel
+    let message: ChatMessage
+
+    var body: some View {
+        switch (message.role, message.content) {
+        case (.user, .text(let text)):
+            UserBubble { Text(text).font(.body).foregroundStyle(.white) }
+        case (.user, .photo(let image, let caption)):
+            UserBubble {
+                VStack(alignment: .trailing, spacing: 8) {
+                    Image(uiImage: image).resizable().scaledToFill()
+                        .frame(width: 190, height: 150).clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    if !caption.isEmpty { Text(caption).font(.body).foregroundStyle(.white) }
+                }
+            }
+        case (_, .text(let text)):
+            AssistantText(text: text, choices: message.choices) { model.choose($0) }
+        case (_, .proposal(let plan)):
+            ProposalCard(model: model, plan: plan)
+        case (_, .planCard(let session)):
+            PlanCard(model: model, session: session)
+        case (_, .error(let text, let needsSettings)):
+            ErrorRow(model: model, text: text, needsSettings: needsSettings)
+        default:
+            EmptyView()
+        }
+    }
+}
+
+struct UserBubble<Content: View>: View {
+    @ViewBuilder var content: Content
+    var body: some View {
+        HStack {
+            Spacer(minLength: 56)
+            content
+                .padding(.horizontal, 16).padding(.vertical, 11)
+                .background(Color.white.opacity(0.14), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        }
+    }
+}
+
+struct AssistantText: View {
+    let text: String
+    let choices: [Choice]
+    let onChoose: (Choice) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "sparkle").font(.system(size: 13, weight: .bold)).foregroundStyle(.black)
+                    .frame(width: 26, height: 26).background(.white, in: Circle()).padding(.top, 1)
+                Text(text).font(.system(size: 17)).foregroundStyle(.white.opacity(0.92))
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 24)
+            }
+            if !choices.isEmpty {
+                ScrollView(.horizontal) {
+                    HStack(spacing: 8) {
+                        ForEach(choices) { c in
+                            Button { onChoose(c) } label: {
+                                Text(c.label).font(.footnote.weight(.semibold)).foregroundStyle(.black)
+                                    .padding(.horizontal, 14).padding(.vertical, 9).background(.white, in: Capsule())
+                            }
+                        }
+                    }
+                }
+                .scrollIndicators(.hidden).padding(.leading, 36)
+            }
+        }
+    }
+}
+
+struct ErrorRow: View {
+    @Bindable var model: TalkViewModel
+    let text: String
+    let needsSettings: Bool
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "exclamationmark").font(.system(size: 13, weight: .bold)).foregroundStyle(.black)
+                    .frame(width: 26, height: 26).background(Color.white.opacity(0.7), in: Circle())
+                Text(text).font(.system(size: 16)).foregroundStyle(.white.opacity(0.8)).fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 24)
+            }
+            HStack(spacing: 8) {
+                if needsSettings {
+                    pill("Open Settings") { if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) } }
+                } else {
+                    pill("Try again") { model.retry() }
+                }
+            }
+            .padding(.leading, 36)
+        }
+    }
+
+    private func pill(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title).font(.footnote.weight(.semibold)).foregroundStyle(.black)
+                .padding(.horizontal, 14).padding(.vertical, 9).background(.white, in: Capsule())
+        }
+    }
+}
+
+/// While the model works: a status line and a way out.
+struct ThinkingRow: View {
+    let status: String
+    let onCancel: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "sparkle").font(.system(size: 13, weight: .bold)).foregroundStyle(.black)
+                .frame(width: 26, height: 26).background(.white, in: Circle()).symbolEffect(.pulse)
+            Text(status).font(.system(size: 16)).foregroundStyle(.white.opacity(0.55))
+            Spacer()
+            Button("Cancel", action: onCancel).font(.footnote.weight(.semibold)).foregroundStyle(.white.opacity(0.6))
+        }
+    }
+}
+
+/// What the user is saying right now, shown as it is transcribed.
+struct ListeningRow: View {
+    let transcript: String
+    var body: some View {
+        UserBubble {
+            Text(transcript.isEmpty ? "Listening…" : transcript)
+                .font(.body.italic()).foregroundStyle(.white.opacity(transcript.isEmpty ? 0.5 : 1))
+        }
+    }
+}
+
+// MARK: - Proposal (the things Sayso is about to do, or did)
+
+struct ProposalCard: View {
+    @Bindable var model: TalkViewModel
+    let plan: ActionPlan
+    @Environment(\.openURL) private var openURL
+
+    private var inactive: Bool { plan.status == .cancelled || plan.status == .replaced }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            header.padding(.horizontal, 18).padding(.top, 16).padding(.bottom, 8)
+            if let results = plan.results, plan.status == .done {
+                ForEach(results) { r in resultRow(r) }
+            } else {
+                ForEach(plan.actions) { a in actionRow(a) }
+            }
+            footer.padding(.horizontal, 18).padding(.vertical, 14)
+        }
+        .background(.white, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .opacity(inactive ? 0.45 : 1)
+        .animation(.smooth, value: plan.status)
+    }
+
+    private var header: some View {
+        HStack {
+            Text(headerText).font(.caption.weight(.semibold)).tracking(1).foregroundStyle(.black.opacity(0.45))
+            Spacer()
+        }
+    }
+
+    private var headerText: String {
+        switch plan.status {
+        case .pending: plan.actions.count > 1 ? "\(plan.actions.count) THINGS TO DO" : "READY TO DO"
+        case .done: "DONE"
+        case .cancelled: "CANCELLED"
+        case .replaced: "REPLACED BY A NEWER REQUEST"
+        }
+    }
+
+    private func actionRow(_ a: ProposedAction) -> some View {
+        HStack(spacing: 14) {
+            icon(a.symbol)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(a.kindLabel.uppercased()).font(.caption2.weight(.semibold)).tracking(0.8).foregroundStyle(.black.opacity(0.4))
+                Text(a.summary).font(.system(size: 16, weight: .medium)).foregroundStyle(.black).lineLimit(3)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 18).padding(.vertical, 10)
+    }
+
+    private func resultRow(_ r: ActionResult) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 14) {
+                icon(r.symbol)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(r.action.kindLabel.uppercased()).font(.caption2.weight(.semibold)).tracking(0.8).foregroundStyle(.black.opacity(0.4))
+                    Text(r.action.summary).font(.system(size: 16, weight: .medium)).foregroundStyle(.black).lineLimit(3)
+                }
+                Spacer(minLength: 0)
+            }
+            status(r).padding(.leading, 50)
+        }
+        .padding(.horizontal, 18).padding(.vertical, 10)
+    }
+
+    @ViewBuilder
+    private func status(_ r: ActionResult) -> some View {
+        switch r.outcome {
+        case .completed(let undo):
+            HStack {
+                Label(ConfirmationSheet.doneText(r.action), systemImage: "checkmark.circle.fill")
+                    .font(.footnote.weight(.medium)).foregroundStyle(.black)
+                Spacer()
+                if undo != nil { pill("Undo") { Task { await model.undo(r.id, in: plan) } } }
+            }
+        case .ready(let deferred):
+            HStack {
+                Label(ConfirmationSheet.readyText(deferred), systemImage: "arrow.up.forward.circle")
+                    .font(.footnote.weight(.medium)).foregroundStyle(.black)
+                Spacer()
+                pill(ConfirmationSheet.readyButton(deferred)) { model.performDeferred(deferred, resultID: r.id, in: plan) }
+            }
+        case .failed(let message, let needsSettings):
+            HStack(alignment: .top) {
+                Label(message, systemImage: "exclamationmark.circle.fill").font(.footnote).foregroundStyle(.black.opacity(0.7))
+                Spacer(minLength: 8)
+                if needsSettings {
+                    pill("Settings") { if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) } }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var footer: some View {
+        if plan.status == .pending {
+            VStack(spacing: 10) {
+                if plan.needsSpanChoice {
+                    Text("This changes a repeating event. Review to choose how.").font(.footnote).foregroundStyle(.black.opacity(0.55))
+                }
+                HStack(spacing: 8) {
+                    Button {
+                        if plan.needsSpanChoice { model.reviewing = plan } else { Task { await model.approve(plan) } }
+                    } label: {
+                        Group {
+                            if plan.isExecuting { ProgressView().tint(.white) }
+                            else { Text(plan.needsSpanChoice ? "Review" : plan.actions.count > 1 ? "Approve all" : "Approve") }
+                        }
+                        .font(.subheadline.weight(.semibold)).foregroundStyle(.white)
+                        .frame(maxWidth: .infinity).padding(.vertical, 13).background(.black, in: Capsule())
+                    }
+                    .buttonStyle(CardPressStyle()).disabled(plan.isExecuting)
+                    if !plan.needsSpanChoice {
+                        Button { model.reviewing = plan } label: {
+                            Text("Details").font(.subheadline.weight(.semibold)).foregroundStyle(.black)
+                                .padding(.horizontal, 18).padding(.vertical, 13).background(Color.black.opacity(0.07), in: Capsule())
+                        }
+                        .buttonStyle(CardPressStyle())
+                    }
+                    Button { model.cancel(plan) } label: {
+                        Image(systemName: "xmark").font(.subheadline.weight(.bold)).foregroundStyle(.black.opacity(0.6))
+                            .frame(width: 46, height: 46).background(Color.black.opacity(0.07), in: Circle())
+                    }
+                    .accessibilityLabel("Cancel")
+                    .disabled(plan.isExecuting)
+                }
+            }
+        }
+    }
+
+    private func icon(_ symbol: String) -> some View {
+        Image(systemName: symbol).font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+            .frame(width: 36, height: 36).background(.black, in: Circle())
+    }
+
+    private func pill(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title).font(.footnote.weight(.semibold)).foregroundStyle(.white)
+                .padding(.horizontal, 14).padding(.vertical, 7).background(.black, in: Capsule())
+        }
+        .buttonStyle(CardPressStyle())
+    }
+}
+
+// MARK: - Day plan
+
+struct PlanCard: View {
+    @Bindable var model: TalkViewModel
+    let session: DayPlanSession
+
+    var body: some View {
+        let blocks = session.items.filter { $0.kind != .remove }.count
+        VStack(alignment: .leading, spacing: 10) {
+            Text(session.isRescue ? "RESCUE MY DAY" : "PLAN MY DAY")
+                .font(.caption.weight(.semibold)).tracking(1).foregroundStyle(.black.opacity(0.45))
+            Text(session.isRescue
+                 ? "\(session.items.count) \(session.items.count == 1 ? "block moves" : "blocks move"), \(session.keptBlocks.count) stay"
+                 : "\(blocks) \(blocks == 1 ? "block" : "blocks") for \(session.day.formatted(.dateTime.weekday(.wide)))")
+                .font(.title3.weight(.semibold)).foregroundStyle(.black)
+            if !session.leftovers.isEmpty {
+                Text("\(session.leftovers.count) didn't fit").font(.subheadline).foregroundStyle(.black.opacity(0.6))
+            }
+            Text("Nothing is added until you approve it.").font(.footnote).foregroundStyle(.black.opacity(0.5))
+            Button { model.planSession = session } label: {
+                Text("Review").font(.subheadline.weight(.semibold)).foregroundStyle(.white)
+                    .frame(maxWidth: .infinity).padding(.vertical, 13).background(.black, in: Capsule())
+            }
+            .buttonStyle(CardPressStyle())
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.white, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+    }
+}

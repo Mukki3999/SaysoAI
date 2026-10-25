@@ -43,26 +43,34 @@ final class AgentService {
         return text.isEmpty ? nil : text
     }
 
+    var isMidConversation: Bool { session != nil }
+
     /// Drops conversation context. Call after a plan is approved or cancelled.
     func resetConversation() { session = nil }
 
     /// `shownAs` is what the confirmation sheet displays when the prompt isn't what the user literally said.
-    func respond(to transcript: String, shownAs label: String? = nil, forceMain: Bool = false, compact: Bool = false) async throws -> AgentOutcome {
+    func respond(to transcript: String, shownAs label: String? = nil, forceMain: Bool = false, compact: Bool = false, context: String? = nil) async throws -> AgentOutcome {
         // "Plan my day" and "I'm behind" start their own flows. Catching them here keeps their tools out of the model's small window.
         if session == nil, label == nil, let intent = PlannerRouter.route(transcript) { return .planner(intent) }
         await collector.reset()
         if self.session == nil { await directory.reset() }
         // Edits get their own small tool set: the on-device model's context window is small.
+        let wasMidConversation = self.session != nil
         let editing = self.session == nil && !forceMain && Self.looksLikeEdit(transcript)
         let session = self.session ?? (editing ? makeEditSession() : makeSession(compact: compact))
         self.session = session
         do {
-            let response = try await session.respond(to: transcript, options: GenerationOptions(temperature: 0.2))
+            // Earlier turns are passed as a short summary, not replayed: the context window is too small for a transcript.
+            var prompt = transcript
+            if !wasMidConversation, let context, !context.isEmpty {
+                prompt = "Recent conversation (only to understand words like \"it\" or \"that\"):\n\(context)\n\nUser now says: \(transcript)"
+            }
+            let response = try await session.respond(to: prompt, options: GenerationOptions(temperature: 0.2))
             let actions = await collector.drain()
             if actions.isEmpty {
                 if editing, response.content.contains("NOT_EDIT") {
                     self.session = nil
-                    return try await respond(to: transcript, shownAs: label, forceMain: true)
+                    return try await respond(to: transcript, shownAs: label, forceMain: true, compact: compact, context: context)
                 }
                 // No actions queued: either a clarifying question or an answer about the user's day.
                 let text = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -80,7 +88,7 @@ final class AgentService {
             self.session = nil
             // Too much for the small window: try once more with shorter instructions.
             if case .exceededContextWindowSize = error, !compact {
-                return try await respond(to: transcript, shownAs: label, forceMain: true, compact: true)
+                return try await respond(to: transcript, shownAs: label, forceMain: true, compact: true, context: context)
             }
             throw ToolError(Self.message(for: error))
         }
@@ -167,7 +175,7 @@ final class AgentService {
 
     /// Cheap check for "this sounds like changing an existing event". If it's wrong the edit session says NOT_EDIT and we retry.
     private static func looksLikeEdit(_ text: String) -> Bool {
-        text.range(of: #"\b(cancel|delete|remove|reschedule|postpone|push|move|rename|shift|change|edit|update|clear)\b"#,
+        text.range(of: #"\b(cancel|delete|remove|reschedule|postpone|push|move|rename|shift|change|edit|update|clear|make it|make that|instead)\b"#,
                    options: [.regularExpression, .caseInsensitive]) != nil
     }
 
@@ -208,6 +216,7 @@ final class AgentService {
         - Questions about the user's schedule ("what's on tomorrow", "am I free Saturday"): call getAgenda for each day asked, then answer in one or two short sentences. Do not call action tools for questions.
         - Make sensible choices instead of asking. Ask one short clarifying question, with no tool calls, only when a required detail is truly missing, such as who to message or which day.
         - Write message and email text in the user's voice, short and natural.
+        - A recent-conversation note may come first. Use it only to understand "it" or "that". If it lists pending items and the user changes them, call the tools again with the full corrected set. Never repeat things already done.
         - After the tool calls, reply in one short sentence.
         \(examples)
         """
@@ -227,6 +236,7 @@ final class AgentService {
         - "Cancel everything after 5" or "clear my afternoon": findEvents with all true for that range, then deleteEvent for every handle.
         - Moving an event to a new time: set newStart only. Renaming: set newTitle only.
         - Write times as local yyyy-MM-dd'T'HH:mm:ss. Bare hours: 1 to 6 are PM, 7 to 11 are AM unless the user says otherwise.
+        - A recent-conversation note may come first. Use it to know which event "it" or "that" means.
         - If the request is not about changing or cancelling an existing calendar event, reply exactly NOT_EDIT and call nothing.
         - After the tool calls, reply in one short sentence.
         """

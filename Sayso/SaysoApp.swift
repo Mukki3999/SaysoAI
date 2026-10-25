@@ -29,6 +29,22 @@ struct SaysoApp: App {
         if ProcessInfo.processInfo.environment["SAYSO_DEMO_MENU"] != nil { model.showMenu = true; return }
         let demo = ProcessInfo.processInfo.environment["SAYSO_DEMO_PLAN"]
         let cal = Calendar.current
+        if demo == "chat" {
+            let day = cal.startOfDay(for: .now)
+            func at(_ d: Int, _ h: Int, _ m: Int = 0) -> Date { cal.date(bySettingHour: h, minute: m, second: 0, of: cal.date(byAdding: .day, value: d, to: day)!)! }
+            let done = ActionPlan(actions: [
+                ProposedAction(payload: .alarm(.init(label: "Wake up", hour: 6, minute: 30, repeatDays: [.monday, .tuesday, .wednesday, .thursday, .friday])))
+            ], transcript: "Wake me at 6:30 on weekdays")
+            model.show(done)
+            done.status = .done
+            done.results = done.actions.map { ActionResult(action: $0, symbol: $0.symbol, title: $0.card, outcome: .completed(undo: { })) }
+            model.say("Done. Anything else for tomorrow?")
+            model.show(ActionPlan(actions: [
+                ProposedAction(payload: .calendar(.init(title: "Dinner with Ankit", start: at(5, 20), end: nil, location: "Nobu", notes: ""))),
+                ProposedAction(payload: .reminder(.init(title: "Book a table", due: at(1, 12), place: "", arriving: true)))
+            ], transcript: "Dinner with Ankit Saturday at 8 at Nobu and remind me to book a table"))
+            return
+        }
         if demo == "plan" || demo == "rescue" { model.planSession = DayPlanSession.demo(rescue: demo == "rescue"); return }
         if demo == "edit" {
             let day = cal.startOfDay(for: .now)
@@ -37,16 +53,16 @@ struct SaysoApp: App {
             var moved = dentist
             moved.start = at(17); moved.end = at(18)
             let sync = EventSnapshot(title: "Team sync", start: at(17, 30), end: at(18), location: "", isRecurring: true)
-            model.plan = ActionPlan(actions: [
+            model.show(ActionPlan(actions: [
                 ProposedAction(payload: .updateEvent(.init(eventID: "x", before: dentist, after: moved, span: nil))),
                 ProposedAction(payload: .deleteEvent(.init(eventID: "y", before: sync, span: nil)))
-            ], transcript: "Move my dentist to 5 and cancel the team sync")
+            ], transcript: "Move my dentist to 5 and cancel the team sync"))
             return
         }
         guard demo == "1" else { return }
         let tomorrow = cal.date(byAdding: .day, value: 1, to: .now)!
         func at(_ h: Int, _ m: Int = 0) -> Date { cal.date(bySettingHour: h, minute: m, second: 0, of: tomorrow)! }
-        model.plan = ActionPlan(actions: [
+        model.show(ActionPlan(actions: [
             ProposedAction(payload: .calendar(.init(title: "Lunch with Sam", start: at(12), end: at(13), location: "Blue Bottle Coffee", notes: ""))),
             ProposedAction(payload: .reminder(.init(title: "Call mom", due: at(6), place: "", arriving: true))),
             ProposedAction(payload: .alarm(.init(label: "Wake up", hour: 7, minute: 0, repeatDays: [.monday, .tuesday, .wednesday, .thursday, .friday]))),
@@ -54,7 +70,7 @@ struct SaysoApp: App {
             ProposedAction(payload: .message(.init(recipient: "Sam Rivera", body: "Running 10 minutes late, order me the usual?"))),
             ProposedAction(payload: .email(.init(recipient: "Alex Chen", subject: "Quarterly numbers", body: "Hi Alex, attached are the numbers we talked about. Let me know if anything looks off before Friday."))),
             ProposedAction(payload: .directions(.init(destination: "Ferry Building San Francisco")))
-        ], transcript: "Lunch with Sam tomorrow at noon, remind me to call mom, and set my alarm")
+        ], transcript: "Lunch with Sam tomorrow at noon, remind me to call mom, and set my alarm"))
         #endif
     }
 
