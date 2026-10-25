@@ -26,6 +26,7 @@ struct SaysoApp: App {
     /// Debug-only: shows the approval sheet in the simulator without the on-device model.
     private static func loadDemoPlanIfRequested(_ model: TalkViewModel) {
         #if DEBUG
+        if ProcessInfo.processInfo.environment["SAYSO_DEMO_MENU"] != nil { model.showMenu = true; return }
         let demo = ProcessInfo.processInfo.environment["SAYSO_DEMO_PLAN"]
         let cal = Calendar.current
         if demo == "plan" || demo == "rescue" { model.planSession = DayPlanSession.demo(rescue: demo == "rescue"); return }

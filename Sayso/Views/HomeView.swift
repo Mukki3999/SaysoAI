@@ -26,10 +26,15 @@ struct HomeView: View {
     @State private var askBehind = false
 
     private var plannerRow: some View {
-        HStack(spacing: 10) {
-            plannerButton("Plan my day", symbol: "sparkles") { model.startPlanning() }
-            plannerButton("Running behind?", symbol: "gauge.with.dots.needle.67percent") { askBehind = true }
+        ScrollView(.horizontal) {
+            HStack(spacing: 10) {
+                plannerButton("Plan my day", symbol: "sparkles") { model.startPlanning() }
+                plannerButton("Running behind?", symbol: "gauge.with.dots.needle.67percent") { askBehind = true }
+                plannerButton("Menu", symbol: "fork.knife") { model.showMenu = true }
+            }
         }
+        .scrollIndicators(.hidden)
+        .padding(.horizontal, -22).contentMargins(.horizontal, 22, for: .scrollContent)
         .confirmationDialog("How far behind are you?", isPresented: $askBehind) {
             ForEach([15, 30, 45, 60, 90], id: \.self) { m in
                 Button("\(m) minutes") { model.startRescue(minutes: m) }

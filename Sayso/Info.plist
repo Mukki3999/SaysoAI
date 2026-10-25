@@ -28,6 +28,8 @@
 	<string>Sayso reads your calendar to show your day, answer questions about it, change or cancel events when you ask, and plan your day around them. Your calendar stays on your iPhone.</string>
 	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
 	<string>Sayso adds events to your calendar when you ask it to. It can only add events, not read your existing ones.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Sayso uses the camera to photograph a menu. The photo is read on your iPhone and is never saved or uploaded.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>Sayso looks up the person you name so it can address your message or email. Contacts stay on your iPhone.</string>
 	<key>NSMicrophoneUsageDescription</key>

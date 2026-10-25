@@ -29,6 +29,7 @@ final class TalkViewModel {
     let planner = PlannerSettings()
     var planSession: DayPlanSession?
     var showManualPlan = false
+    var showMenu = false
     private(set) var plannerStep: PlannerStep?
     private var draftTasks: [PlanTask] = []
 

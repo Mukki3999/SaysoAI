@@ -30,6 +30,7 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         ITSAppUsesNonExemptEncryption: false
+        NSCameraUsageDescription: Sayso uses the camera to photograph a menu. The photo is read on your iPhone and is never saved or uploaded.
         NSMicrophoneUsageDescription: Sayso listens only while you hold the mic button, to turn what you say into text. Audio is processed on your iPhone and never leaves it.
         NSSpeechRecognitionUsageDescription: Sayso converts your speech to text on your iPhone so it can understand your request. Nothing is sent to a server.
         NSCalendarsFullAccessUsageDescription: Sayso reads your calendar to show your day, answer questions about it, change or cancel events when you ask, and plan your day around them. Your calendar stays on your iPhone.

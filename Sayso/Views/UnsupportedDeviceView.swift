@@ -20,6 +20,7 @@ struct UnsupportedDeviceView: View {
             // Planning never depends on the language model, so it still works here.
             Button("Plan my day manually") { model.showManualPlan = true }
                 .buttonStyle(.borderedProminent).padding(.top, 8)
+            Button("Browse a menu photo") { model.showMenu = true }
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

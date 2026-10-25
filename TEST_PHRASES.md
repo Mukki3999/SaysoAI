@@ -34,3 +34,23 @@ Set up first: a few events today and tomorrow, one repeating event (e.g. weekly 
 
 ## App Intents
 - Shortcuts app > Sayso > "Plan my day" / "Rescue my day" (minutes parameter) -> app opens and starts the flow.
+
+---
+
+# Menu Helper manual tests (home screen > Menu)
+
+For each photo: check the highlight lands on the right dish when you tap a card, and every result shows "Based on menu text, not allergy-safe. Check with the restaurant."
+
+| Case | Photo / say | Expect |
+|---|---|---|
+| Clean printed menu | Photo of a normal printed menu. "Something light, vegetarian, under $20, not too spicy" | Chips appear (Vegetarian, Under $20, Not spicy, Light). Three picks, each a real dish with price and a one-line reason. No meat or fish dishes. |
+| Handwritten / chalkboard | Photo of a chalkboard menu | Dishes found, or the clear "couldn't find any dishes" message. Never invented dishes. Straight-on, even light helps. |
+| Dim photo | Photo in a dark restaurant | Fewer or messier dishes, still nothing invented. Retake prompt if nothing readable. |
+| No prices | Menu with no prices. "Under $15" | Picks appear and a note says "This menu shows no prices, so the budget wasn't applied." |
+| Vegetarian | "Vegetarian" | No meat/fish dishes. Dishes labelled (V) rank well. |
+| Under $15 | "Under $15" | Every pick is $15 or less. |
+| Follow-up change | After a result: "Make it vegan", then "What about dessert?" | Chips update (Vegan, then Dessert) and keep the rest. Results refresh. Tapping a chip's x removes it. |
+| Impossible request | "Vegan, under $5, no mushrooms" | "No match" card explaining why (for example "Nothing is under $5. The cheapest match is $9."). No picks. |
+| Two-column menu | Menu printed in two columns | Dishes read column by column, prices stay with their dish. |
+| Apple Intelligence off | Any photo | Searchable list with Diet and Price chips. Tap a row to highlight it on the photo. |
+| Mic | Tap the mic, say a preference, pause | Stops on its own and updates the picks. |
