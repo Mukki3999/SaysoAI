@@ -72,6 +72,7 @@ final class TalkViewModel {
     var menuSeed: MenuSeed?
     private(set) var plannerStep: PlannerStep?
     private var draftTasks: [PlanTask] = []
+    private var planDay = Date.now
 
     /// The proposal being looked at in the full review sheet.
     var reviewing: ActionPlan?
@@ -193,6 +194,7 @@ final class TalkViewModel {
         if let step = plannerStep { await handlePlannerAnswer(step, text); return }
         state = .thinking
         thinkingStatus = "Thinking…"
+        planDay = text.lowercased().contains("tomorrow") ? Calendar.current.date(byAdding: .day, value: 1, to: .now)! : .now
         requestID += 1
         let id = requestID
         let agent = self.agent
@@ -204,6 +206,7 @@ final class TalkViewModel {
             }
             guard id == requestID, state == .thinking else { return }   // cancelled or replaced meanwhile
             await apply(outcome)
+            agent.prewarm()
         } catch {
             guard id == requestID else { return }
             agent.resetConversation()
@@ -544,6 +547,7 @@ final class TalkViewModel {
     func startPlanning(mustDos: String? = nil) {
         guard canSend else { return }
         tab = .chat
+        planDay = .now
         append(ChatMessage(role: .user, content: .text("Plan my day")))
         Task { await begin(.planDay(mustDos: mustDos)) }
     }
@@ -614,7 +618,7 @@ final class TalkViewModel {
                 await handlePlannerAnswer(.mustDos, mustDos)
             } else {
                 plannerStep = .mustDos
-                say("What must get done today? Tell me in any order, with how long each takes and any deadlines.")
+                say(await planOpener())
             }
         case .rescueDay(let minutes):
             if let minutes {
@@ -624,6 +628,23 @@ final class TalkViewModel {
                 say("How far behind are you?", choices: [15, 30, 45, 60, 90].map { Choice(label: "\($0) min", action: .behind($0)) })
             }
         }
+    }
+
+    /// Looks at that day first, so the question isn't blind: "You have 5 things tomorrow…".
+    private func planOpener() async -> String {
+        let cal = Calendar.current
+        let name = cal.isDateInToday(planDay) ? "today" : "tomorrow"
+        var text = ""
+        if AgendaReader.access() == .granted {
+            let start = cal.startOfDay(for: planDay)
+            let items = await AgendaReader.load(from: start, to: cal.date(byAdding: .day, value: 1, to: start)!)
+                .filter { $0.kind == .event && !$0.allDay }
+            if !items.isEmpty {
+                let first = items.prefix(3).map { "\($0.title) at \($0.start?.formatted(date: .omitted, time: .shortened) ?? "")" }.joined(separator: ", ")
+                text = "You already have \(items.count) \(items.count == 1 ? "event" : "events") \(name): \(first)\(items.count > 3 ? " and more" : ""). I'll plan around them.\n\n"
+            }
+        }
+        return text + "What else needs to get done \(name)? Tell me in any order, with how long each takes and any deadlines."
     }
 
     private func handlePlannerAnswer(_ step: PlannerStep, _ text: String) async {
@@ -669,7 +690,7 @@ final class TalkViewModel {
         planner.focus = focus
         state = .thinking
         thinkingStatus = "Planning your day…"
-        let session = DayPlanSession(mode: .plan, tasks: draftTasks, focus: focus, settings: planner.plan)
+        let session = DayPlanSession(mode: .plan, tasks: draftTasks, focus: focus, settings: planner.plan, day: planDay)
         await present(session)
     }
 

@@ -36,7 +36,10 @@ struct TalkView: View {
             Button("Keep it", role: .cancel) {}
         } message: { Text("Your calendar and reminders are not affected.") }
         .animation(.smooth, value: model.state)
-        .task { await model.refreshDay() }
+        .task {
+            model.agent.prewarm()
+            await model.refreshDay()
+        }
         .onChange(of: model.tab) { _, tab in
             if tab == .today { Task { await model.refreshDay() } }
         }

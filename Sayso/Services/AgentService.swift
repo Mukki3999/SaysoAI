@@ -1,3 +1,4 @@
+import Foundation
 import FoundationModels
 import Observation
 
@@ -46,11 +47,23 @@ final class AgentService {
 
     var isMidConversation: Bool { session != nil }
 
+    @ObservationIgnored private var warm: (session: LanguageModelSession, made: Date)?
+
+    /// Loads the model and its instructions ahead of time, so the next request doesn't pay for it.
+    func prewarm() {
+        guard isModelAvailable else { return }
+        if let warm, Date.now.timeIntervalSince(warm.made) < 600 { return }
+        let s = makeSession()
+        s.prewarm()
+        warm = (s, .now)
+    }
+
     /// Drops conversation context. Call after a plan is approved or cancelled.
     func resetConversation() { session = nil }
 
     /// `shownAs` is what the confirmation sheet displays when the prompt isn't what the user literally said.
     func respond(to transcript: String, shownAs label: String? = nil, forceMain: Bool = false, compact: Bool = false, context: String? = nil, routeDeletes: Bool = true) async throws -> AgentOutcome {
+        if session == nil, label == nil, let reply = SmallTalk.reply(transcript) { return .answer(reply) }
         // "Delete X" is found and matched in Swift, not by the model, so it works the same every time.
         if routeDeletes, session == nil, label == nil, let command = EventCommand.parse(transcript) {
             return try await resolveDelete(command, said: transcript)
@@ -62,7 +75,7 @@ final class AgentService {
         // Edits get their own small tool set: the on-device model's context window is small.
         let wasMidConversation = self.session != nil
         let editing = self.session == nil && !forceMain && Self.looksLikeEdit(transcript)
-        let session = self.session ?? (editing ? makeEditSession() : makeSession(compact: compact))
+        let session = self.session ?? (editing ? makeEditSession() : (compact ? nil : takeWarm()) ?? makeSession(compact: compact))
         self.session = session
         do {
             // Earlier turns are passed as a short summary, not replayed: the context window is too small for a transcript.
@@ -113,6 +126,12 @@ final class AgentService {
         case .tooMany(let n):
             return .answer("That's \(n) events, too many to cancel at once. Try a single day or a name.")
         }
+    }
+
+    private func takeWarm() -> LanguageModelSession? {
+        defer { warm = nil }
+        guard let warm, Date.now.timeIntervalSince(warm.made) < 600 else { return nil }
+        return warm.session
     }
 
     private func makeSession(compact: Bool = false) -> LanguageModelSession {
@@ -209,7 +228,7 @@ final class AgentService {
             DraftMessageTool(collector: collector),
             DraftEmailTool(collector: collector),
             OpenDirectionsTool(collector: collector),
-            GetAgendaTool()
+            GetAgendaTool(collector: collector)
         ]
     }
 
@@ -234,7 +253,8 @@ final class AgentService {
         - Write dates and times as local yyyy-MM-dd'T'HH:mm:ss.
         - Bare hours with no AM or PM: alarms 4 to 11 are AM. Events and reminders 1 to 6 are PM, 7 to 11 are AM unless the request says tonight, dinner or evening. 12 is noon.
         - If the user gives no end time, leave end empty. Never invent locations, names or notes.
-        - Questions about the user's schedule ("what's on tomorrow", "am I free Saturday"): call getAgenda for each day asked, then answer in one or two short sentences. Do not call action tools for questions.
+        - Questions about the user's schedule ("what's on tomorrow", "am I free Saturday"): call getAgenda for each day asked, then answer in one or two short sentences. Do not call action tools for questions. Events from getAgenda already exist: never create, copy or re-add them.
+        - Chat, greetings and thanks: just reply in one friendly sentence. No tools.
         - Make sensible choices instead of asking. Ask one short clarifying question, with no tool calls, only when a required detail is truly missing, such as who to message or which day.
         - Write message and email text in the user's voice, short and natural.
         - A recent-conversation note may come first. Use it only to understand "it" or "that". If it lists pending items and the user changes them, call the tools again with the full corrected set. Never repeat things already done.

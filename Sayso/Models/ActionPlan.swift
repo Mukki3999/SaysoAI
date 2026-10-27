@@ -181,6 +181,10 @@ struct ProposedAction: Identifiable, Equatable, Sendable, Codable {
 /// EventKit, AlarmKit, Contacts or MessageUI.
 actor PlanCollector {
     private var actions: [ProposedAction] = []
+    /// What getAgenda showed the model this turn. Anything it then "creates" that is already there is dropped.
+    private var agenda = ""
+
+    func noteAgenda(_ text: String) { agenda += "\n" + text.lowercased() }
 
     func add(_ payload: ProposedAction.Payload) -> Bool {
         let action = ProposedAction(payload: payload)
@@ -191,11 +195,18 @@ actor PlanCollector {
     }
 
     func drain() -> [ProposedAction] {
-        defer { actions = [] }
-        return actions
+        defer { actions = []; agenda = "" }
+        guard !agenda.isEmpty else { return actions }
+        return actions.filter { a in
+            switch a.payload {
+            case .calendar(let d): !agenda.contains(d.title.lowercased())
+            case .reminder(let d): !agenda.contains(d.title.lowercased())
+            default: true
+            }
+        }
     }
 
-    func reset() { actions = [] }
+    func reset() { actions = []; agenda = "" }
 }
 
 /// "Plan my day" and "Rescue my day" don't create actions. They start the planner, which has its own sheet.

@@ -107,19 +107,57 @@ struct ErrorRow: View {
     }
 }
 
-/// While the model works: a status line and a way out.
+/// While the model works: a verb that changes every couple of seconds, shimmering, and a way out.
 struct ThinkingRow: View {
     let status: String
     let onCancel: () -> Void
+
+    private static let verbs = [
+        "Pondering", "Untangling", "Percolating", "Noodling", "Conjuring", "Choreographing", "Cogitating",
+        "Marinating", "Wrangling", "Ruminating", "Concocting", "Deciphering", "Tinkering", "Mulling it over",
+        "Connecting the dots", "Rearranging the furniture", "Consulting the stars", "Herding your calendar"
+    ]
+    @State private var start = Int.random(in: 0..<verbs.count)
 
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "sparkle").font(.system(size: 13, weight: .bold)).foregroundStyle(.black)
                 .frame(width: 26, height: 26).background(.white, in: Circle()).symbolEffect(.pulse)
-            Text(status).font(.system(size: 16)).foregroundStyle(.white.opacity(0.55))
+            if status == "Thinking…" {
+                TimelineView(.periodic(from: .now, by: 2.2)) { context in
+                    let tick = Int(context.date.timeIntervalSinceReferenceDate / 2.2)
+                    Shimmer(text: Self.verbs[(start + tick) % Self.verbs.count] + "…")
+                        .id(tick)
+                        .transition(.opacity)
+                }
+                .animation(.easeInOut(duration: 0.4), value: start)
+            } else {
+                Shimmer(text: status)
+            }
             Spacer()
             Button("Cancel", action: onCancel).font(.footnote.weight(.semibold)).foregroundStyle(.white.opacity(0.6))
         }
+    }
+}
+
+/// Grey text with a soft highlight sweeping across it.
+struct Shimmer: View {
+    let text: String
+    @State private var phase: CGFloat = -0.4
+
+    var body: some View {
+        Text(text).font(.system(size: 16)).foregroundStyle(.white.opacity(0.4))
+            .overlay {
+                Text(text).font(.system(size: 16)).foregroundStyle(.white)
+                    .mask {
+                        GeometryReader { g in
+                            LinearGradient(colors: [.clear, .white, .clear], startPoint: .leading, endPoint: .trailing)
+                                .frame(width: g.size.width * 0.5)
+                                .offset(x: g.size.width * phase)
+                        }
+                    }
+            }
+            .onAppear { withAnimation(.linear(duration: 1.4).repeatForever(autoreverses: false)) { phase = 1 } }
     }
 }
 

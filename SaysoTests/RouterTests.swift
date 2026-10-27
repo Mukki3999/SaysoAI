@@ -32,3 +32,17 @@ struct RouterTests {
         #expect(!MenuDetector.looksLikeMenu(ticket, userText: "Add this to my calendar"))
     }
 }
+
+@Suite struct LooseRouterTests {
+    @Test func calendarPlanningGoesToPlanner() {
+        #expect(PlannerRouter.route("I have a busy day tomorrow can you help me plan my calendar") == .planDay(mustDos: nil))
+        #expect(PlannerRouter.route("plan tomorrow") == .planDay(mustDos: nil))
+        #expect(PlannerRouter.route("text Sam I have a busy day tomorrow") == nil)
+    }
+
+    @Test func smallTalk() {
+        #expect(SmallTalk.reply("Hello") != nil)
+        #expect(SmallTalk.reply("thanks!") == "Anytime.")
+        #expect(SmallTalk.reply("Hello, set an alarm for 7") == nil)
+    }
+}

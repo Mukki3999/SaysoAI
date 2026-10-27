@@ -67,6 +67,7 @@
 		E29C27E7CE4BAE0D18735589 /* MenuDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = F113C0F4C1676AB5B9B96EA2 /* MenuDetector.swift */; };
 		E46C5D8C825DFEBC3BFD9786 /* CalendarAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE3025264C2A488B3BE68218 /* CalendarAccess.swift */; };
 		E4BF2FB5E2DADFBBFEE0BED8 /* ActionCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CAC0C9C2FD16E7DB0722D3C /* ActionCards.swift */; };
+		E5843593AD5E3B1317FF1B53 /* SmallTalk.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D855B677584D2E6C0D38586 /* SmallTalk.swift */; };
 		E6A306E12BAF26C5D94B4470 /* SpeechService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0808FA54597A0A6111E3694C /* SpeechService.swift */; };
 		E89FAA7862A68CD2D8193A78 /* OpenDirectionsTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 307AECB9F77D8D409C55084E /* OpenDirectionsTool.swift */; };
 		EA20501678FED884BD6F3816 /* EventLookup.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A54334A17283CE64A3E729 /* EventLookup.swift */; };
@@ -131,6 +132,7 @@
 		6FDB7CD7A056D1974C52C070 /* ChatRows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatRows.swift; sourceTree = "<group>"; };
 		729DF8E93ED0D35982C85243 /* TalkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkView.swift; sourceTree = "<group>"; };
 		775807554E286327D09D4833 /* PlannerRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlannerRouter.swift; sourceTree = "<group>"; };
+		7D855B677584D2E6C0D38586 /* SmallTalk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmallTalk.swift; sourceTree = "<group>"; };
 		82080EC783DAF251977F366C /* MenuHelperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuHelperView.swift; sourceTree = "<group>"; };
 		854C81D2A382E7A43D522413 /* SaysoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaysoTests.swift; sourceTree = "<group>"; };
 		97EB849F1BE4624F0352CA96 /* OnboardingScenes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingScenes.swift; sourceTree = "<group>"; };
@@ -305,6 +307,7 @@
 				5AFF13D5D53107E44E782785 /* Diagnostics.swift */,
 				398EA6E95CB2FD67B7DE1586 /* ImageTextReader.swift */,
 				31B8F419C5485764CC747BFC /* LifeStore.swift */,
+				7D855B677584D2E6C0D38586 /* SmallTalk.swift */,
 				0808FA54597A0A6111E3694C /* SpeechService.swift */,
 				F67F3FA858930E8EFECB5B76 /* Timeout.swift */,
 			);
@@ -488,6 +491,7 @@
 				14B7A4F201EB5554DA14C4E1 /* Scheduler.swift in Sources */,
 				0E09B8106E301F4F8B4A1EB0 /* SetAlarmTool.swift in Sources */,
 				C7E2572A744038E36BD76928 /* SettingsSheet.swift in Sources */,
+				E5843593AD5E3B1317FF1B53 /* SmallTalk.swift in Sources */,
 				E6A306E12BAF26C5D94B4470 /* SpeechService.swift in Sources */,
 				F022122297EF80EC912921F8 /* StartTimerTool.swift in Sources */,
 				122246C18E8CF0EF4B4E74AF /* TalkView.swift in Sources */,
@@ -590,7 +594,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = XR95QV2C94;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -675,7 +679,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = XR95QV2C94;
 				ENABLE_NS_ASSERTIONS = NO;

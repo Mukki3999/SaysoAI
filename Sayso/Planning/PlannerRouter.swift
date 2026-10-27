@@ -25,6 +25,9 @@ enum PlannerRouter {
             for lead in ["i need to ", "i have to ", "i want to ", "i've got to ", "so i can ", "for me "] where rest.hasPrefix(lead) { rest = String(rest.dropFirst(lead.count)) }
             return .planDay(mustDos: rest.count >= 6 ? rest : nil)
         }
+        // "Help me plan my calendar", "I have a busy day tomorrow, can you help me plan it": same planner.
+        let loose = #"\b(plan|organi[sz]e|map out|lay out|sort out|structure|manage)\s+(out\s+)?(my|the|our)?\s*(whole\s+|entire\s+)?(tomorrow|calendar|schedule|week)\b|\bplan (today|tomorrow)\b|\b(busy|packed|hectic|crazy|full) (day|tomorrow)\b"#
+        if !messaging, t.range(of: loose, options: .regularExpression) != nil { return .planDay(mustDos: nil) }
         return nil
     }
 }
