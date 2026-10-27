@@ -59,12 +59,17 @@ struct FindEventsTool: Tool {
         let store = EKEventStore()
         let end = min(to, from.addingTimeInterval(31 * 86400))
         let words = a.text.lowercased().split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map(String.init).filter { $0.count >= 3 }
-        let events = store.events(matching: store.predicateForEvents(withStart: from, end: end, calendars: nil))
-            .filter { !$0.isAllDay }
+        let matching = store.events(matching: store.predicateForEvents(withStart: from, end: end, calendars: nil))
             .filter { e in
                 words.isEmpty || words.contains { ((e.title ?? "") + " " + (e.location ?? "")).lowercased().contains($0) }
             }
             .sorted { $0.startDate < $1.startDate }
+        // A repeating event shows up once per occurrence. Offer it once (its next occurrence), or no handle would ever be issued.
+        var seen = Set<String>()
+        let events = matching.filter { e in
+            guard e.hasRecurrenceRules, let id = e.eventIdentifier else { return true }
+            return seen.insert(id).inserted
+        }
 
         if events.isEmpty { return "No events match. Tell the user nothing was found." }
         let lines = events.prefix(12).map { "\($0.title ?? "Untitled"), \(Self.when($0))" }
@@ -115,7 +120,7 @@ struct UpdateEventTool: Tool {
 
     func call(arguments a: Arguments) async throws -> String {
         guard let entry = await directory.entry(a.id) else {
-            throw ToolError("Unknown event \(a.id). Call findEvents first.")
+            throw ToolError("I lost track of which event you meant. Say its name again, like “delete Rent”.")
         }
         let before = entry.snapshot
         var after = before
@@ -152,7 +157,7 @@ struct DeleteEventTool: Tool {
 
     func call(arguments a: Arguments) async throws -> String {
         guard let entry = await directory.entry(a.id) else {
-            throw ToolError("Unknown event \(a.id). Call findEvents first.")
+            throw ToolError("I lost track of which event you meant. Say its name again, like “delete Rent”.")
         }
         let added = await collector.add(.deleteEvent(EventDeleteDraft(eventID: entry.eventID, before: entry.snapshot, span: nil)))
         return added ? "Queued cancelling “\(entry.snapshot.title)” for the user to approve." : "Already queued."

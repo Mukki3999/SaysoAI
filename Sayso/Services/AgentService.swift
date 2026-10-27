@@ -6,6 +6,7 @@ enum AgentOutcome: Sendable {
     case question(String)   // the model needs one more detail
     case answer(String)     // a reply to a question about the user's day
     case planner(PlannerIntent)   // start Plan my day or Rescue my day
+    case pickEvent(String, [EventDeleteDraft])   // several events fit: the user picks one
 }
 
 @MainActor @Observable
@@ -49,7 +50,11 @@ final class AgentService {
     func resetConversation() { session = nil }
 
     /// `shownAs` is what the confirmation sheet displays when the prompt isn't what the user literally said.
-    func respond(to transcript: String, shownAs label: String? = nil, forceMain: Bool = false, compact: Bool = false, context: String? = nil) async throws -> AgentOutcome {
+    func respond(to transcript: String, shownAs label: String? = nil, forceMain: Bool = false, compact: Bool = false, context: String? = nil, routeDeletes: Bool = true) async throws -> AgentOutcome {
+        // "Delete X" is found and matched in Swift, not by the model, so it works the same every time.
+        if routeDeletes, session == nil, label == nil, let command = EventCommand.parse(transcript) {
+            return try await resolveDelete(command, said: transcript)
+        }
         // "Plan my day" and "I'm behind" start their own flows. Catching them here keeps their tools out of the model's small window.
         if session == nil, label == nil, let intent = PlannerRouter.route(transcript) { return .planner(intent) }
         await collector.reset()
@@ -91,6 +96,22 @@ final class AgentService {
                 return try await respond(to: transcript, shownAs: label, forceMain: true, compact: true, context: context)
             }
             throw ToolError(Self.message(for: error))
+        }
+    }
+
+    private func resolveDelete(_ command: EventCommand, said: String) async throws -> AgentOutcome {
+        let name = command.words.isEmpty ? "" : command.words.joined(separator: " ")
+        switch try await EventLookup.resolve(command) {
+        case .none:
+            let what = name.isEmpty ? "any events" : "an event called “\(name)”"
+            let when = command.day == nil ? "in the next year" : "then"
+            return .answer("I couldn't find \(what) \(when). Check the spelling, or tell me the day.")
+        case .drafts(let drafts):
+            return .plan(ActionPlan(actions: drafts.map { ProposedAction(payload: .deleteEvent($0)) }, transcript: said))
+        case .choose(let drafts):
+            return .pickEvent("Which one do you want to delete?", drafts)
+        case .tooMany(let n):
+            return .answer("That's \(n) events, too many to cancel at once. Try a single day or a name.")
         }
     }
 

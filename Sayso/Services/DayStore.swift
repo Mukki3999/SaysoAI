@@ -14,6 +14,7 @@ final class DayStore {
     private(set) var access: AgendaAccess = AgendaReader.access()
     private(set) var briefing: String?
     private var lastBriefedText = ""
+    private var refreshCount = 0
     private let life: LifeStore
 
     init(life: LifeStore) { self.life = life }
@@ -22,10 +23,15 @@ final class DayStore {
         #if DEBUG
         if ProcessInfo.processInfo.environment["SAYSO_DEMO_DAY"] == "1" { loadDemo(); return }
         #endif
+        refreshCount += 1
+        let mine = refreshCount
         access = AgendaReader.access()
         if access == .granted {
             let start = Calendar.current.startOfDay(for: .now)
-            items = await AgendaReader.load(from: start, to: Calendar.current.date(byAdding: .day, value: 7, to: start)!)
+            let loaded = await AgendaReader.load(from: start, to: Calendar.current.date(byAdding: .day, value: 14, to: start)!)
+            // A slower, older refresh must not overwrite a newer one (an event added a moment ago would vanish).
+            guard mine == refreshCount else { return }
+            items = loaded
         } else {
             items = life.agendaItems()
         }

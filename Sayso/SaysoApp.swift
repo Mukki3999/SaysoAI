@@ -1,3 +1,4 @@
+import EventKit
 import SwiftUI
 
 @main
@@ -43,6 +44,24 @@ struct SaysoApp: App {
                 ProposedAction(payload: .calendar(.init(title: "Dinner with Ankit", start: at(5, 20), end: nil, location: "Nobu", notes: ""))),
                 ProposedAction(payload: .reminder(.init(title: "Book a table", due: at(1, 12), place: "", arriving: true)))
             ], transcript: "Dinner with Ankit Saturday at 8 at Nobu and remind me to book a table"))
+            return
+        }
+        if demo == "live" {
+            // Real EventKit round trip: seed events the way the app does, then delete by name without the model.
+            Task {
+                let tomorrow = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: .now))!
+                func at(_ h: Int) -> Date { cal.date(bySettingHour: h, minute: 0, second: 0, of: tomorrow)! }
+                let store = EKEventStore()
+                _ = try? await store.requestFullAccessToEvents()
+                let daily = EKEvent(eventStore: store)
+                daily.title = "Morning Skincare Routine"; daily.startDate = at(7); daily.endDate = at(8)
+                daily.calendar = store.defaultCalendarForNewEvents
+                daily.addRecurrenceRule(EKRecurrenceRule(recurrenceWith: .daily, interval: 1, end: nil))
+                try? store.save(daily, span: .futureEvents)
+                _ = try? await CalendarEventAction.perform(.init(title: "Dentist", start: at(15), end: at(16), location: "Smile Care", notes: ""))
+                await model.refreshDay()
+                if let q = ProcessInfo.processInfo.environment["SAYSO_DEMO_ASK"] { await model.send(q) }
+            }
             return
         }
         if demo == "plan" || demo == "rescue" { model.planSession = DayPlanSession.demo(rescue: demo == "rescue"); return }

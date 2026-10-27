@@ -11,6 +11,8 @@ struct AgendaItem: Identifiable, Sendable, Equatable {
     let end: Date?
     let detail: String
     let allDay: Bool
+    var eventID: String? = nil      // set for Calendar events, which can be deleted from the home screen
+    var recurring = false
 }
 
 enum AgendaAccess { case notAsked, granted, denied }
@@ -41,7 +43,8 @@ enum AgendaReader {
             items += events.map {
                 AgendaItem(id: "e-\($0.eventIdentifier ?? $0.title ?? "")-\($0.startDate.timeIntervalSince1970)",
                            kind: .event, title: $0.title ?? "Untitled", start: $0.startDate, end: $0.endDate,
-                           detail: $0.location ?? "", allDay: $0.isAllDay)
+                           detail: $0.location ?? "", allDay: $0.isAllDay,
+                           eventID: $0.eventIdentifier, recurring: $0.hasRecurrenceRules)
             }
         }
         if EKEventStore.authorizationStatus(for: .reminder) == .fullAccess {

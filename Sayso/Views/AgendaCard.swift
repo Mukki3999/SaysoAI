@@ -6,6 +6,8 @@ struct AgendaCard: View {
     let item: AgendaItem
     var featured = false
     var stacked = false
+    /// Set for Calendar events: shows a ⋯ button that starts a delete.
+    var onDelete: (() -> Void)? = nil
 
     private var isClockAlarm: Bool { item.kind == .alarm && item.start != nil }
 
@@ -68,6 +70,16 @@ struct AgendaCard: View {
             .foregroundStyle(.black.opacity(0.7))
             .padding(.horizontal, 12).padding(.vertical, 7)
             .background(Color.black.opacity(0.06), in: Capsule())
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .overlay(alignment: .trailing) {
+                if let onDelete {
+                    Button(action: onDelete) {
+                        Image(systemName: "ellipsis").font(.system(size: 15, weight: .bold)).foregroundStyle(.black.opacity(0.7))
+                            .frame(width: 44, height: 34).background(Color.black.opacity(0.06), in: Capsule())
+                    }
+                    .accessibilityLabel("Delete \(item.title)")
+                }
+            }
 
             Text(title)
                 .font(.system(size: featured ? 30 : 23, weight: .regular))

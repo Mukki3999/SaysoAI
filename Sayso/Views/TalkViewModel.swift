@@ -36,7 +36,12 @@ final class TalkViewModel {
         let life = LifeStore()
         self.life = life
         day = DayStore(life: life)
+        messages = ChatStore.load()
     }
+
+    /// Today is your schedule; Chat is the one conversation that never goes away.
+    enum Tab: Hashable { case today, chat }
+    var tab: Tab = .today
 
     enum PlannerStep { case mustDos, focus, behind }
 
@@ -86,7 +91,13 @@ final class TalkViewModel {
 
     // MARK: Messages
 
-    private func append(_ message: ChatMessage) { messages.append(message) }
+    private func append(_ message: ChatMessage) {
+        messages.append(message)
+        persist()
+    }
+
+    /// Saves the thread. Called whenever something in it changes, including a proposal's status.
+    func persist() { ChatStore.save(messages) }
 
     /// An assistant reply. Read aloud if the user asked for that.
     func say(_ text: String, choices: [Choice] = []) {
@@ -119,7 +130,7 @@ final class TalkViewModel {
         return "Something went wrong. Try again.\n\(Diagnostics.describe(error))"
     }
 
-    /// Starts over with an empty thread and the home screen.
+    /// Wipes the shared conversation. The only way it goes away.
     func newChat() {
         requestID += 1
         speaker.stop()
@@ -129,6 +140,7 @@ final class TalkViewModel {
         attachment = nil
         input = ""
         messages = []
+        ChatStore.erase()
         if state != .idle { Task { await speech.cancel() } }
         state = .idle
         Task { await refreshDay() }
@@ -168,6 +180,7 @@ final class TalkViewModel {
         guard !said.isEmpty, canSend else { return }
         speaker.stop()
         clearChoices()
+        tab = .chat
         append(ChatMessage(role: .user, content: .text(said)))
         await process(said)
     }
@@ -187,7 +200,7 @@ final class TalkViewModel {
         let hasPending = hasPendingProposal
         do {
             let outcome = try await withTimeout(seconds: 60) {
-                try await agent.respond(to: text, forceMain: hasPending, context: context)
+                try await agent.respond(to: text, forceMain: hasPending, context: context, routeDeletes: !hasPending)
             }
             guard id == requestID, state == .thinking else { return }   // cancelled or replaced meanwhile
             await apply(outcome)
@@ -204,6 +217,11 @@ final class TalkViewModel {
         case .answer(let a): say(a)
         case .plan(let plan): propose(plan)
         case .planner(let intent): await begin(intent)
+        case .pickEvent(let q, let drafts):
+            say(q, choices: drafts.map { d in
+                let when = d.before.start.formatted(.dateTime.month(.abbreviated).day().hour().minute())
+                return Choice(label: "\(d.before.title) · \(when)", action: .proposeDelete(d))
+            })
         }
     }
 
@@ -220,11 +238,12 @@ final class TalkViewModel {
 
     /// For the simulator's demo hooks.
     func show(_ plan: ActionPlan) {
+        tab = .chat
         append(ChatMessage(role: .user, content: .text(plan.transcript)))
         propose(plan)
     }
 
-    private var hasPendingProposal: Bool {
+    var hasPendingProposal: Bool {
         messages.contains { if case .proposal(let p) = $0.content { p.status == .pending } else { false } }
     }
 
@@ -266,6 +285,7 @@ final class TalkViewModel {
             return
         }
         guard !pressing, canSend else { return }
+        tab = .chat
         pressing = true
         handsFree = false
         pressStart = .now
@@ -352,6 +372,7 @@ final class TalkViewModel {
 
     /// The photo waits in the composer so the user can say what they want.
     func receivePhoto(_ data: Data) {
+        tab = .chat
         attachment = PendingPhoto(data: data)
     }
 
@@ -359,6 +380,7 @@ final class TalkViewModel {
     func sendPhoto(_ photo: PendingPhoto, text said: String) async {
         guard canSend else { return }
         clearChoices()
+        tab = .chat
         if let image = photo.image { append(ChatMessage(role: .user, content: .photo(image, caption: said))) }
         lastUserText = said
         state = .thinking
@@ -401,6 +423,7 @@ final class TalkViewModel {
         plan.results = ran
         plan.status = .done
         plan.isExecuting = false
+        persist()
         life.add(ran.filter { if case .failed = $0.outcome { false } else { true } }.map(\.action))
         if ran.count == 1, case .ready(let deferred) = ran[0].outcome {
             performDeferred(deferred, resultID: ran[0].id, in: plan)
@@ -414,6 +437,7 @@ final class TalkViewModel {
         guard plan.status == .pending else { return }
         plan.status = .cancelled
         reviewing = nil
+        persist()
         agent.resetConversation()
     }
 
@@ -471,6 +495,46 @@ final class TalkViewModel {
         }
     }
 
+    /// "Deleted Rent · Undo", shown on the Today screen for a few seconds.
+    struct HomeUndo: Identifiable {
+        let id = UUID()
+        let title: String
+        let undo: @Sendable () async throws -> Void
+    }
+    var homeUndo: HomeUndo?
+    var homeError: String?
+
+    /// Today screen: the user tapped Delete and confirmed.
+    func deleteFromHome(_ item: AgendaItem, span: EditSpan) async {
+        guard let id = item.eventID, let start = item.start, let end = item.end else { return }
+        let draft = EventDeleteDraft(
+            eventID: id,
+            before: EventSnapshot(title: item.title, start: start, end: end, location: item.detail, isRecurring: item.recurring),
+            span: span)
+        do {
+            let outcome = try await EventEditAction.delete(draft)
+            if case .completed(let undo?) = outcome {
+                let token = HomeUndo(title: item.title, undo: undo)
+                homeUndo = token
+                Task {
+                    try? await Task.sleep(for: .seconds(7))
+                    if homeUndo?.id == token.id { homeUndo = nil }
+                }
+            }
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        } catch {
+            homeError = (error as? LocalizedError)?.errorDescription ?? "Couldn't delete that. Try again."
+        }
+        await refreshDay()
+    }
+
+    func undoHomeDelete() async {
+        guard let token = homeUndo else { return }
+        homeUndo = nil
+        do { try await token.undo() } catch { homeError = "Couldn't restore it. Check the Calendar app." }
+        await refreshDay()
+    }
+
     func refreshDay() async { await day.refresh(agent: agent) }
     func connectDay() async { await day.connect(agent: agent) }
 
@@ -479,12 +543,14 @@ final class TalkViewModel {
     /// Button or voice. Without Apple Intelligence the manual form takes over.
     func startPlanning(mustDos: String? = nil) {
         guard canSend else { return }
+        tab = .chat
         append(ChatMessage(role: .user, content: .text("Plan my day")))
         Task { await begin(.planDay(mustDos: mustDos)) }
     }
 
     func startRescue(minutes: Int) {
         guard canSend else { return }
+        tab = .chat
         append(ChatMessage(role: .user, content: .text(minutes == 0 ? "Re-plan the rest of my day" : "I'm \(minutes) minutes behind")))
         Task { await begin(.rescueDay(minutesBehind: minutes)) }
     }
@@ -508,6 +574,10 @@ final class TalkViewModel {
             Task { await handlePlannerAnswer(.behind, "\(m)") }
         case .send(let text):
             Task { await send(text) }
+        case .proposeDelete(let draft):
+            clearChoices()
+            append(ChatMessage(role: .user, content: .text(choice.label)))
+            propose(ActionPlan(actions: [ProposedAction(payload: .deleteEvent(draft))], transcript: "Delete \(draft.before.title)"))
         }
     }
 
