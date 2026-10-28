@@ -109,7 +109,7 @@ actor VoiceEngine {
     private static let voice = "af_heart"
     /// The 8-bit build: about 82 MB instead of 312 MB, and still a natural voice.
     private static let modelId = "aufklarer/Kokoro-82M-CoreML-INT8"
-
+    /// The 8-bit build: about 82 MB instead of 312 MB, and still a natural voice.
     static var cacheDir: URL {
         let dir = URL.applicationSupportDirectory.appending(path: "Sayso/voice-int8", directoryHint: .isDirectory)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -121,7 +121,10 @@ actor VoiceEngine {
     }
 
     /// True once a previous launch finished downloading.
-    nonisolated static var isDownloaded: Bool { UserDefaults.standard.bool(forKey: "sayso.voice.downloaded") }
+    nonisolated static var isDownloaded: Bool {
+        UserDefaults.standard.bool(forKey: "sayso.voice.downloaded")
+            && FileManager.default.fileExists(atPath: cacheDir.appending(path: "kokoro_5s.mlmodelc/weights/weight.bin").path)
+    }
 
     func load(progress: @escaping @Sendable (Double) -> Void) async throws {
         if model != nil { return }

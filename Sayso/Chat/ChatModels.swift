@@ -15,6 +15,7 @@ struct ChatMessage: Identifiable {
         case photo(UIImage, caption: String)
         case proposal(ActionPlan)
         case planCard(DayPlanSession)
+        case agenda(String, [AgendaItem])
         case error(String, needsSettings: Bool)
     }
 
@@ -107,7 +108,7 @@ enum ChatStore {
                 case .cancelled, .replaced:
                     return nil
                 }
-            case .planCard, .error:
+            case .planCard, .error, .agenda:
                 return nil
             }
         }

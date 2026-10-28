@@ -53,6 +53,7 @@ final class Diagnostics {
                     case .question(let q): return "Asked: \(q.prefix(60)) (\(secs))"
                     case .answer(let a): return "Answered: \(a.prefix(60)) (\(secs))"
                     case .planner: return "Planner (\(secs))"
+                    case .agenda(_, let items): return "Agenda card with \(items.count) items (\(secs))"
                     case .pickEvent(_, let options): return "Asked which of \(options.count) events (\(secs))"
                     }
                 }

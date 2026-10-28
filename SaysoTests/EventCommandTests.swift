@@ -88,3 +88,27 @@ import Testing
         #expect(m.map(\.id) == ["a"])
     }
 }
+
+@Suite struct SuggestionTests {
+    let cal: Calendar = { var c = Calendar(identifier: .gregorian); c.timeZone = TimeZone(identifier: "America/New_York")!; return c }()
+    var now: Date { cal.date(from: DateComponents(year: 2026, month: 10, day: 28, hour: 3))! }
+    func ev(_ id: String, _ title: String, day: Int, hour: Int) -> EventCandidate {
+        EventCandidate(id: id, title: title, location: "", start: cal.date(from: DateComponents(year: 2026, month: 10, day: day, hour: hour))!,
+                       end: cal.date(from: DateComponents(year: 2026, month: 10, day: day, hour: hour + 1))!, recurring: true)
+    }
+
+    @Test func emojiTitlesMatch() {
+        let events = (28...30).map { ev("night", "🌙 Night Skincare Routine", day: $0, hour: 23) }
+            + (28...30).map { ev("morn", "☀️ Morning Skincare Routine", day: $0, hour: 7) }
+        let cmd = EventCommand.parse("Can you remove night skincare routine", now: now, calendar: cal)!
+        let m = EventMatcher.match(events, command: cmd, now: now, calendar: cal)
+        #expect(m.map(\.id) == ["night"])
+    }
+
+    @Test func nearMissesAreSuggested() {
+        let events = [ev("night", "🌙 Night Skincare Routine", day: 28, hour: 23), ev("x", "Dentist", day: 29, hour: 9)]
+        let cmd = EventCommand.parse("delete evening skin routine thing", now: now, calendar: cal)!
+        let s = EventMatcher.suggest(events, command: cmd, now: now)
+        #expect(s.first?.id == "night")
+    }
+}

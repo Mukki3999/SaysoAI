@@ -253,6 +253,11 @@ final class TalkViewModel {
         case .answer(let a): say(a)
         case .plan(let plan): propose(plan)
         case .planner(let intent): await begin(intent)
+        case .agenda(let day, let items):
+            clearChoices()
+            append(ChatMessage(role: .assistant, content: .agenda(day, items)))
+            state = .idle
+            if speakReplies { speaker.speak("\(day) you have \(items.count) \(items.count == 1 ? "thing" : "things").") }
         case .pickEvent(let q, let drafts):
             say(q, choices: drafts.map { d in
                 let when = d.before.start.formatted(.dateTime.month(.abbreviated).day().hour().minute())

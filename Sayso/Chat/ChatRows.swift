@@ -21,6 +21,8 @@ struct MessageRow: View {
             AssistantText(text: text, choices: message.choices) { model.choose($0) }
         case (_, .proposal(let plan)):
             ProposalCard(model: model, plan: plan)
+        case (_, .agenda(let title, let items)):
+            AgendaListCard(title: title, items: items)
         case (_, .planCard(let session)):
             PlanCard(model: model, session: session)
         case (_, .error(let text, let needsSettings)):
@@ -361,5 +363,54 @@ struct PlanCard: View {
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.white, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+    }
+}
+
+// MARK: - Agenda list (an answer to "what's on tomorrow?")
+
+struct AgendaListCard: View {
+    let title: String
+    let items: [AgendaItem]
+    @State private var expanded = false
+
+    private var shown: [AgendaItem] { expanded ? items : Array(items.prefix(6)) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text(title.uppercased()).font(.caption.weight(.semibold)).tracking(1).foregroundStyle(.black.opacity(0.45))
+                Spacer()
+                Text("\(items.count) \(items.count == 1 ? "thing" : "things")").font(.caption).foregroundStyle(.black.opacity(0.45))
+            }
+            .padding(.horizontal, 18).padding(.top, 16).padding(.bottom, 6)
+            ForEach(shown) { item in
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    Text(time(item)).font(.subheadline.monospacedDigit().weight(.medium)).foregroundStyle(.black.opacity(0.5))
+                        .frame(width: 74, alignment: .leading)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(item.kind == .alarm && item.start != nil ? "Alarm" : item.title)
+                            .font(.system(size: 16, weight: .medium)).foregroundStyle(.black).fixedSize(horizontal: false, vertical: true)
+                        if item.kind == .event, !item.detail.isEmpty {
+                            Text(item.detail).font(.footnote).foregroundStyle(.black.opacity(0.5)).lineLimit(1)
+                        }
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 18).padding(.vertical, 9)
+            }
+            if items.count > 6 {
+                Button { withAnimation(.smooth) { expanded.toggle() } } label: {
+                    Text(expanded ? "Show less" : "Show \(items.count - 6) more").font(.footnote.weight(.semibold)).foregroundStyle(.black)
+                        .frame(maxWidth: .infinity).padding(.vertical, 12)
+                }
+            }
+            Color.clear.frame(height: 8)
+        }
+        .background(.white, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+    }
+
+    private func time(_ i: AgendaItem) -> String {
+        if i.allDay { return "All day" }
+        return i.start.map { $0.formatted(date: .omitted, time: .shortened) } ?? "Now"
     }
 }
