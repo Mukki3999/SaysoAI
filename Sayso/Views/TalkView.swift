@@ -38,6 +38,7 @@ struct TalkView: View {
         .animation(.smooth, value: model.state)
         .task {
             model.agent.prewarm()
+            NeuralVoice.shared.prepare()
             await model.refreshDay()
         }
         .onChange(of: model.tab) { _, tab in

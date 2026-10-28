@@ -27,6 +27,7 @@ struct SaysoApp: App {
     /// Debug-only: shows the approval sheet in the simulator without the on-device model.
     private static func loadDemoPlanIfRequested(_ model: TalkViewModel) {
         #if DEBUG
+        if ProcessInfo.processInfo.environment["SAYSO_TEST_VOICE"] == "1" { Task { await NeuralVoice.debugSelfTest() } }
         if ProcessInfo.processInfo.environment["SAYSO_DEMO_MENU"] != nil { model.showMenu = true; return }
         let demo = ProcessInfo.processInfo.environment["SAYSO_DEMO_PLAN"]
         let cal = Calendar.current
