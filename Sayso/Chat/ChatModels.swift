@@ -33,6 +33,11 @@ final class Speaker {
 
     func speak(_ text: String) {
         stop()
+        // Sayso's own neural voice when it's downloaded; Apple's voice until then, or if it ever fails.
+        if NeuralVoice.shared.isReady {
+            NeuralVoice.shared.speak(text)
+            return
+        }
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = Self.bestVoice
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.98
@@ -57,6 +62,7 @@ final class Speaker {
     }()
 
     func stop() {
+        NeuralVoice.shared.stop()
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
     }
 }

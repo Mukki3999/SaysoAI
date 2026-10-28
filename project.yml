@@ -10,11 +10,18 @@ settings:
     CODE_SIGN_STYLE: Automatic
     MARKETING_VERSION: "1.0"
     CURRENT_PROJECT_VERSION: "13"
+packages:
+  SpeechSwift:
+    url: https://github.com/soniqo/speech-swift
+    revision: 9ce78eaec038b4dc8b519a8b01ecb4059549cfec
 targets:
   Sayso:
     type: application
     platform: iOS
     sources: [Sayso]
+    dependencies:
+      - package: SpeechSwift
+        product: KokoroTTS
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.mukki.sayso

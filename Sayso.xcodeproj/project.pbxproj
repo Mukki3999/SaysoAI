@@ -57,6 +57,7 @@
 		C7E2572A744038E36BD76928 /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F0510269492ADE2E2BE8BA /* SettingsSheet.swift */; };
 		CA59567257075188C3C46B9A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FCA9345A9EBA6BDFF6DB44B5 /* Assets.xcassets */; };
 		CB52BC4AA720D4678B4A4C4E /* OnboardingParts.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF670A268DE7371C5873A5A1 /* OnboardingParts.swift */; };
+		CFC9A315CD9903F0953FEB11 /* KokoroTTS in Frameworks */ = {isa = PBXBuildFile; productRef = 9550BCB7B8E666523335E22F /* KokoroTTS */; };
 		D165CFF78E884E101B58442A /* ChatRows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FDB7CD7A056D1974C52C070 /* ChatRows.swift */; };
 		D31EF5E2EFC536EEEC78C106 /* DraftEmailTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49D4C6A20F9A2C77AD9B8ADF /* DraftEmailTool.swift */; };
 		D4A3DE11DA96A678E26E297D /* CreateCalendarEventTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277685B9B551DD652BB0B065 /* CreateCalendarEventTool.swift */; };
@@ -76,6 +77,7 @@
 		F022122297EF80EC912921F8 /* StartTimerTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 022667DEF8B571ED352843FF /* StartTimerTool.swift */; };
 		F10BA34525B63FFE1025AC74 /* SaysoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6213B894178E7E7AC7EC2BC9 /* SaysoApp.swift */; };
 		F4552F7B25246F2F8FA095D9 /* PreferenceParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9154A4F9E796C58FA5E7284 /* PreferenceParser.swift */; };
+		FB72A3FDA2B8EA121B321563 /* NeuralVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = F438953BCFB4283E2BB0A88A /* NeuralVoice.swift */; };
 		FC04E1518F03B49FBEFE82F2 /* MenuFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DF749790B73CB9C5F647FC4 /* MenuFilter.swift */; };
 		FC31BD667B86DB127794D81B /* DayPlanSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = E950F3F21F4D1FA1CAAA5783 /* DayPlanSession.swift */; };
 		FDAC2AD579AF11F9398C83F4 /* MenuPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB8269AD222EE6E46F36C92A /* MenuPreferences.swift */; };
@@ -164,10 +166,22 @@
 		F0AAD0511694547D3CCB6965 /* GetAgendaTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetAgendaTool.swift; sourceTree = "<group>"; };
 		F113C0F4C1676AB5B9B96EA2 /* MenuDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuDetector.swift; sourceTree = "<group>"; };
 		F1C46AE386DE7A803D4BF8A6 /* MenuOCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuOCRService.swift; sourceTree = "<group>"; };
+		F438953BCFB4283E2BB0A88A /* NeuralVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeuralVoice.swift; sourceTree = "<group>"; };
 		F67F3FA858930E8EFECB5B76 /* Timeout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Timeout.swift; sourceTree = "<group>"; };
 		FCA9345A9EBA6BDFF6DB44B5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		FD6A86AB47F83ECA07A050C4 /* Scheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scheduler.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C820C97312F0144D470AF371 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CFC9A315CD9903F0953FEB11 /* KokoroTTS in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		04B18A88F1BECCF57EC174D8 /* Onboarding */ = {
@@ -194,6 +208,7 @@
 				993E782153C42E7E4AD6343B /* Services */,
 				205526CADB6B999D9D7446E9 /* Tools */,
 				4953604212576D33A6CCDA03 /* Views */,
+				D8E52F5BC883DA252E2A1F68 /* Voice */,
 			);
 			path = Sayso;
 			sourceTree = "<group>";
@@ -347,6 +362,14 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		D8E52F5BC883DA252E2A1F68 /* Voice */ = {
+			isa = PBXGroup;
+			children = (
+				F438953BCFB4283E2BB0A88A /* NeuralVoice.swift */,
+			);
+			path = Voice;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -374,6 +397,7 @@
 			buildPhases = (
 				3F432DEBCFCE3E9983214AB6 /* Sources */,
 				8BFB3615CBC0F12F6DB5C327 /* Resources */,
+				C820C97312F0144D470AF371 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -381,6 +405,7 @@
 			);
 			name = Sayso;
 			packageProductDependencies = (
+				9550BCB7B8E666523335E22F /* KokoroTTS */,
 			);
 			productName = Sayso;
 			productReference = 0A5DC6026C2BE995992B8E94 /* Sayso.app */;
@@ -414,6 +439,9 @@
 			);
 			mainGroup = 451461410E2239BE04DA69BA;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				E1BEB2E3EB6A3F8175C5C289 /* XCRemoteSwiftPackageReference "speech-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D1B15D8F7DEEBC8F65EE7D27 /* Products */;
 			projectDirPath = "";
@@ -483,6 +511,7 @@
 				022196E320725A78F1CA5ACC /* MenuPhotoView.swift in Sources */,
 				FDAC2AD579AF11F9398C83F4 /* MenuPreferences.swift in Sources */,
 				8C81446A505B39E372A67ECA /* MenuRanker.swift in Sources */,
+				FB72A3FDA2B8EA121B321563 /* NeuralVoice.swift in Sources */,
 				CB52BC4AA720D4678B4A4C4E /* OnboardingParts.swift in Sources */,
 				3FD6ACDC1A78B8E0F7ACA033 /* OnboardingScenes.swift in Sources */,
 				80FEB6CA0D1CB799C8F430CF /* OnboardingView.swift in Sources */,
@@ -761,6 +790,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		E1BEB2E3EB6A3F8175C5C289 /* XCRemoteSwiftPackageReference "speech-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/soniqo/speech-swift";
+			requirement = {
+				kind = revision;
+				revision = 9ce78eaec038b4dc8b519a8b01ecb4059549cfec;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		9550BCB7B8E666523335E22F /* KokoroTTS */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1BEB2E3EB6A3F8175C5C289 /* XCRemoteSwiftPackageReference "speech-swift" */;
+			productName = KokoroTTS;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 32996E55B96ECDBD9235866E /* Project object */;
 }
