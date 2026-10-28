@@ -70,6 +70,13 @@ final class AgentService {
         }
         // "Plan my day" and "I'm behind" start their own flows. Catching them here keeps their tools out of the model's small window.
         if session == nil, label == nil, let intent = PlannerRouter.route(transcript) { return .planner(intent) }
+        // Simple, common requests skip the model entirely: instant, and they can't fail the way it can.
+        if session == nil, label == nil, let quick = QuickParser.parse(transcript) {
+            switch quick {
+            case .action(let payload): return .plan(ActionPlan(actions: [ProposedAction(payload: payload)], transcript: transcript))
+            case .agenda(let day): return .answer(await Self.agendaAnswer(for: day))
+            }
+        }
         await collector.reset()
         if self.session == nil { await directory.reset() }
         // Edits get their own small tool set: the on-device model's context window is small.
@@ -110,6 +117,24 @@ final class AgentService {
             }
             throw ToolError(Self.message(for: error))
         }
+    }
+
+    /// "Tomorrow you have 3 things: …", straight from the calendar.
+    static func agendaAnswer(for day: Date) async -> String {
+        let cal = Calendar.current
+        let name = cal.isDateInToday(day) ? "today" : cal.isDateInTomorrow(day) ? "tomorrow" : "on " + day.formatted(.dateTime.weekday(.wide))
+        guard AgendaReader.access() == .granted else {
+            return "I can't see your calendar yet. Open Today and tap Connect, then ask again."
+        }
+        let items = await AgendaReader.load(from: day, to: cal.date(byAdding: .day, value: 1, to: day)!)
+        guard !items.isEmpty else { return "Nothing is scheduled \(name). Your day is clear." }
+        let lines = items.prefix(8).map { i -> String in
+            let when = i.allDay ? "All day" : (i.start.map { $0.formatted(date: .omitted, time: .shortened) } ?? "Running")
+            let title = i.kind == .alarm && i.start != nil ? "Alarm" : i.title
+            return "• \(when)  \(title)" + (i.kind == .event && !i.detail.isEmpty ? " (\(i.detail))" : "")
+        }
+        let more = items.count > 8 ? "\n…and \(items.count - 8) more." : ""
+        return "\(name.prefix(1).uppercased() + name.dropFirst()) you have \(items.count) \(items.count == 1 ? "thing" : "things"):\n" + lines.joined(separator: "\n") + more
     }
 
     private func resolveDelete(_ command: EventCommand, said: String) async throws -> AgentOutcome {

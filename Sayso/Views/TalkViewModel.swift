@@ -125,10 +125,25 @@ final class TalkViewModel {
         for i in messages.indices where !messages[i].choices.isEmpty { messages[i].choices = [] }
     }
 
+    private static func status(for text: String) -> String {
+        let t = text.lowercased()
+        if t.range(of: #"\b(calendar|schedule|meeting|event|tomorrow|today|free|busy)\b"#, options: .regularExpression) != nil { return "Checking your calendar…" }
+        if t.range(of: #"\b(text|message|email)\b"#, options: .regularExpression) != nil { return "Drafting that…" }
+        return "Thinking…"
+    }
+
+    /// Quick, model-side failures are worth one more try. Permission and timeout problems are not.
+    private static func isRetryable(_ error: Error) -> Bool {
+        if error is PermissionDenied { return false }
+        let text = String(describing: error).lowercased()
+        return !text.contains("too long") && !text.contains("can't help") && !text.contains("unsupported")
+    }
+
     private static func message(for error: Error) -> String {
-        if let e = error as? LocalizedError, let d = e.errorDescription { return d }
-        // Always say what failed, so a report can be acted on.
-        return "Something went wrong. Try again.\n\(Diagnostics.describe(error))"
+        if let e = error as? LocalizedError, let d = e.errorDescription,
+           !d.lowercased().contains("deserialize"), !d.lowercased().contains("generat") { return d }
+        // A friendly line first. The technical detail sits after the line break and is tucked behind "Details".
+        return "I couldn't work that out. Rephrase it, or try again.\n\(Diagnostics.describe(error))"
     }
 
     /// Wipes the shared conversation. The only way it goes away.
@@ -153,6 +168,12 @@ final class TalkViewModel {
         agent.resetConversation()
         plannerStep = nil
         state = .idle
+    }
+
+    /// Puts the last request back in the composer so it can be reworded.
+    func editLast() {
+        if case .error = messages.last?.content { messages.removeLast(); persist() }
+        input = lastUserText
     }
 
     func retry() {
@@ -193,16 +214,28 @@ final class TalkViewModel {
         lastUserText = text
         if let step = plannerStep { await handlePlannerAnswer(step, text); return }
         state = .thinking
-        thinkingStatus = "Thinking…"
+        thinkingStatus = Self.status(for: text)
         planDay = text.lowercased().contains("tomorrow") ? Calendar.current.date(byAdding: .day, value: 1, to: .now)! : .now
         requestID += 1
         let id = requestID
         let agent = self.agent
         let context = conversationContext()
         let hasPending = hasPendingProposal
-        do {
-            let outcome = try await withTimeout(seconds: 60) {
+        let started = Date.now
+        func ask() async throws -> AgentOutcome {
+            try await withTimeout(seconds: 60) {
                 try await agent.respond(to: text, forceMain: hasPending, context: context, routeDeletes: !hasPending)
+            }
+        }
+        do {
+            let outcome: AgentOutcome
+            do {
+                outcome = try await ask()
+            } catch where Self.isRetryable(error) && Date.now.timeIntervalSince(started) < 40 {
+                // The small model sometimes stumbles on a perfectly good request. One quiet retry fixes most of those.
+                guard id == requestID else { return }
+                agent.resetConversation()
+                outcome = try await ask()
             }
             guard id == requestID, state == .thinking else { return }   // cancelled or replaced meanwhile
             await apply(outcome)

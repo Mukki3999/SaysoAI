@@ -34,10 +34,27 @@ final class Speaker {
     func speak(_ text: String) {
         stop()
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = AVSpeechSynthesisVoice(language: Locale.current.identifier.replacingOccurrences(of: "_", with: "-"))
-        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 1.02
+        utterance.voice = Self.bestVoice
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.98
+        utterance.pitchMultiplier = 1.0
+        utterance.preUtteranceDelay = 0.05
         synthesizer.speak(utterance)
     }
+
+    /// The most natural voice installed for the user's language: Premium, then Enhanced, then the standard one.
+    /// Downloading a Premium voice in iOS Settings > Accessibility > Spoken Content > Voices upgrades it automatically.
+    static let bestVoice: AVSpeechSynthesisVoice? = {
+        let lang = Locale.current.language.languageCode?.identifier ?? "en"
+        let region = Locale.current.identifier.replacingOccurrences(of: "_", with: "-")
+        let voices = AVSpeechSynthesisVoice.speechVoices().filter {
+            $0.language.hasPrefix(lang) && !$0.voiceTraits.contains(.isNoveltyVoice)
+        }
+        func rank(_ v: AVSpeechSynthesisVoice) -> Int {
+            let q = v.quality == .premium ? 200 : v.quality == .enhanced ? 100 : 0
+            return q + (v.language == region ? 10 : 0)
+        }
+        return voices.max { rank($0) < rank($1) } ?? AVSpeechSynthesisVoice(language: region)
+    }()
 
     func stop() {
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }

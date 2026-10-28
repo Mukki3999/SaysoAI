@@ -79,13 +79,20 @@ struct ErrorRow: View {
     let text: String
     let needsSettings: Bool
     @Environment(\.openURL) private var openURL
+    @State private var showDetails = false
+
+    /// Friendly line, then (optionally) the technical detail after a line break.
+    private var parts: (main: String, detail: String?) {
+        let pieces = text.split(separator: "\n", maxSplits: 1).map(String.init)
+        return (pieces.first ?? text, pieces.count > 1 ? pieces[1] : nil)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top, spacing: 10) {
                 Image(systemName: "exclamationmark").font(.system(size: 13, weight: .bold)).foregroundStyle(.black)
                     .frame(width: 26, height: 26).background(Color.white.opacity(0.7), in: Circle())
-                Text(text).font(.system(size: 16)).foregroundStyle(.white.opacity(0.8)).fixedSize(horizontal: false, vertical: true)
+                Text(parts.main).font(.system(size: 16)).foregroundStyle(.white.opacity(0.8)).fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 24)
             }
             HStack(spacing: 8) {
@@ -93,9 +100,17 @@ struct ErrorRow: View {
                     pill("Open Settings") { if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) } }
                 } else {
                     pill("Try again") { model.retry() }
+                    pill("Edit") { model.editLast() }
+                    if parts.detail != nil {
+                        Button(showDetails ? "Hide details" : "Details") { withAnimation(.smooth) { showDetails.toggle() } }
+                            .font(.footnote).foregroundStyle(.white.opacity(0.5))
+                    }
                 }
             }
             .padding(.leading, 36)
+            if showDetails, let detail = parts.detail {
+                Text(detail).font(.caption.monospaced()).foregroundStyle(.white.opacity(0.4)).textSelection(.enabled).padding(.leading, 36)
+            }
         }
     }
 
