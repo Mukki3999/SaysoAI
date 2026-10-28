@@ -29,6 +29,13 @@ struct ActionCardBody: View {
         case .directions(let d): DirectionsPreview(d: d)
         case .updateEvent(let d): EventDiffPreview(before: d.before, after: d.after, removing: false)
         case .deleteEvent(let d): EventDiffPreview(before: d.before, after: nil, removing: true)
+        case .deleteReminder(let d):
+            HStack(spacing: 10) {
+                Image(systemName: "checklist").foregroundStyle(.black.opacity(0.5))
+                Text(d.title).strikethrough().foregroundStyle(.black.opacity(0.6)).lineLimit(2)
+                Spacer(minLength: 0)
+            }
+            .padding(14).background(Color.black.opacity(0.05), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
     }
 }

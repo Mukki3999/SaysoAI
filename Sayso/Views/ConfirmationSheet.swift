@@ -168,6 +168,7 @@ struct ConfirmationSheet: View {
         case .timer: "Timer started"
         case .updateEvent: "Event updated"
         case .deleteEvent: "Event cancelled"
+        case .deleteReminder: "Reminder deleted"
         default: "Done"
         }
     }

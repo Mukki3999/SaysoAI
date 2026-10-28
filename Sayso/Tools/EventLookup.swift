@@ -27,7 +27,8 @@ enum EventLookup {
                              before: EventSnapshot(title: m.title, start: m.start, end: m.end, location: m.location, isRecurring: m.recurring),
                              span: m.recurring ? command.span : nil)
         }
-        var matches = EventMatcher.match(candidates, command: command)
+        // Exact matches only: a loose calendar match must not beat an exact reminder. Near misses come back as suggestions.
+        var matches = EventMatcher.match(candidates, command: command, relaxed: false)
         if !command.everything { matches = EventMatcher.exact(matches, command: command) }
         if matches.isEmpty {
             let near = EventMatcher.suggest(candidates, command: command).map(draft)

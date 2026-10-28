@@ -45,6 +45,12 @@ struct DirectionsDraft: Equatable, Sendable, Codable {
     var destination: String
 }
 
+struct ReminderDeleteDraft: Equatable, Sendable, Codable {
+    var id: String
+    var title: String
+    var due: Date?
+}
+
 /// How much of a repeating event a change applies to. The user picks; the model never does.
 enum EditSpan: String, Equatable, Sendable, Codable {
     case thisEvent, futureEvents
@@ -84,6 +90,7 @@ struct ProposedAction: Identifiable, Equatable, Sendable, Codable {
         case directions(DirectionsDraft)
         case updateEvent(EventEditDraft)
         case deleteEvent(EventDeleteDraft)
+        case deleteReminder(ReminderDeleteDraft)
     }
 
     var id = UUID()
@@ -100,6 +107,7 @@ struct ProposedAction: Identifiable, Equatable, Sendable, Codable {
         case .directions: "Directions"
         case .updateEvent: "Edit event"
         case .deleteEvent: "Cancel event"
+        case .deleteReminder: "Delete reminder"
         }
     }
 
@@ -114,6 +122,7 @@ struct ProposedAction: Identifiable, Equatable, Sendable, Codable {
         case .directions: "arrow.triangle.turn.up.right.diamond"
         case .updateEvent: "pencil"
         case .deleteEvent: "trash"
+        case .deleteReminder: "trash"
         }
     }
 
@@ -145,6 +154,8 @@ struct ProposedAction: Identifiable, Equatable, Sendable, Codable {
             return "\(d.before.title) → \(d.after.title == d.before.title ? DateText.short(d.after.start) : d.after.title)"
         case .deleteEvent(let d):
             return "\(d.before.title), \(DateText.short(d.before.start))"
+        case .deleteReminder(let d):
+            return d.due.map { "\(d.title), \(DateText.short($0))" } ?? d.title
         }
     }
 
@@ -169,7 +180,7 @@ struct ProposedAction: Identifiable, Equatable, Sendable, Codable {
 
     var isEventChange: Bool {
         switch payload {
-        case .updateEvent, .deleteEvent: true
+        case .updateEvent, .deleteEvent, .deleteReminder: true
         default: false
         }
     }

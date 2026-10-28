@@ -6,6 +6,7 @@ enum QuickParser {
     enum Result: Equatable {
         case action(ProposedAction.Payload)
         case agenda(day: Date)
+        case recurring
     }
 
     static func parse(_ text: String, now: Date = .now, calendar cal: Calendar = .current) -> Result? {
@@ -15,6 +16,8 @@ enum QuickParser {
         if t.range(of: EventCommand.verbs, options: .regularExpression) != nil { return nil }
         if t.range(of: #"\b(text|message|email|directions?|navigate)\b"#, options: .regularExpression) != nil { return nil }
 
+        if t.range(of: #"\b(recurring|repeating|repeats?)\b.*\b(events?|meetings?|things|reminders?)\b|\b(events?|meetings?)\b.*\b(recurring|repeat|repeating)\b"#, options: .regularExpression) != nil,
+           t.range(of: #"\b(what|which|show|list|any|do i have)\b"#, options: .regularExpression) != nil { return .recurring }
         if let r = agenda(t, now: now, cal: cal) { return r }
         if let r = timer(t) { return r }
         if let r = alarm(t) { return r }

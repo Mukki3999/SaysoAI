@@ -2,7 +2,7 @@ import AVFoundation
 import UIKit
 
 struct Choice: Identifiable {
-    enum Action { case focus(FocusPreference), behind(Int), send(String), proposeDelete(EventDeleteDraft) }
+    enum Action { case focus(FocusPreference), behind(Int), send(String), propose(ProposedAction.Payload) }
     let id = UUID()
     let label: String
     let action: Action
@@ -119,7 +119,9 @@ enum ChatStore {
     @MainActor
     static func load() -> [ChatMessage] {
         guard let data = try? Data(contentsOf: url), let stored = try? JSONDecoder().decode([Stored].self, from: data) else { return [] }
-        return stored.map { s in
+        // A proposal nobody approved by the next morning is stale: its times and the calendar have moved on.
+        let cutoff = Calendar.current.startOfDay(for: .now)
+        return stored.filter { $0.kind != .proposal || $0.date >= cutoff }.map { s in
             var m: ChatMessage
             switch s.kind {
             case .text: m = ChatMessage(role: s.fromUser ? .user : .assistant, content: .text(s.text))

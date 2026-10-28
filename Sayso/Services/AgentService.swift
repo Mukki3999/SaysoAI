@@ -7,7 +7,7 @@ enum AgentOutcome: Sendable {
     case question(String)   // the model needs one more detail
     case answer(String)     // a reply to a question about the user's day
     case planner(PlannerIntent)   // start Plan my day or Rescue my day
-    case pickEvent(String, [EventDeleteDraft])
+    case pickEvent(String, [ProposedAction.Payload])
     case agenda(day: String, [AgendaItem])   // shown as a list card in the chat   // several events fit: the user picks one
 }
 
@@ -76,6 +76,13 @@ final class AgentService {
             switch quick {
             case .action(let payload): return .plan(ActionPlan(actions: [ProposedAction(payload: payload)], transcript: transcript))
             case .agenda(let day): return await Self.agendaOutcome(for: day)
+            case .recurring:
+                try? await CalendarAccess.ensureFullEvents()
+                guard AgendaReader.access() == .granted else {
+                    return .answer("I need calendar access to answer that. Turn it on in Settings > Sayso > Calendars, then ask again.")
+                }
+                let items = await AgendaReader.recurring()
+                return items.isEmpty ? .answer("You have no repeating events in the next year.") : .agenda(day: "Repeating events", items)
             }
         }
         await collector.reset()
@@ -129,8 +136,10 @@ final class AgentService {
     static func agendaOutcome(for day: Date) async -> AgentOutcome {
         let cal = Calendar.current
         let name = cal.isDateInToday(day) ? "Today" : cal.isDateInTomorrow(day) ? "Tomorrow" : day.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
+        // Asking about the calendar is the moment to ask for access.
+        try? await CalendarAccess.ensureFullEvents()
         guard AgendaReader.access() == .granted else {
-            return .answer("I can't see your calendar yet. Open Today and tap Connect, then ask again.")
+            return .answer("I need calendar access to answer that. Turn it on in Settings > Sayso > Calendars, then ask again.")
         }
         let items = await AgendaReader.load(from: day, to: cal.date(byAdding: .day, value: 1, to: day)!)
         guard !items.isEmpty else { return .answer("Nothing is scheduled \(name.lowercased()). Your day is clear.") }
@@ -141,13 +150,26 @@ final class AgentService {
         let name = command.words.isEmpty ? "" : command.words.joined(separator: " ")
         switch try await EventLookup.resolve(command) {
         case .none(let scanned, let near):
-            if !near.isEmpty { return .pickEvent("I couldn't find an exact match for “\(name)”. Did you mean one of these?", near) }
+            // Not on the calendar? It may be a reminder.
+            var options: [ProposedAction.Payload] = near.map { .deleteEvent($0) }
+            if !command.words.isEmpty, (try? await RemindersAccess.ensureFull()) != nil {
+                let all = await RemindersAccess.incomplete()
+                func payload(_ r: ReminderInfo) -> ProposedAction.Payload { .deleteReminder(.init(id: r.id, title: r.title, due: r.due)) }
+                let strict = RemindersAccess.match(all, words: command.words, strict: true)
+                let sameTitle = Set(strict.map { $0.title.lowercased() }).count == 1
+                if strict.count == 1 || (!strict.isEmpty && (command.everything || sameTitle)) {
+                    return .plan(ActionPlan(actions: strict.prefix(12).map { ProposedAction(payload: payload($0)) }, transcript: said))
+                }
+                if strict.count > 1 { return .pickEvent("Which reminder do you want to delete?", strict.prefix(5).map(payload)) }
+                options += RemindersAccess.match(all, words: command.words, strict: false).prefix(3).map(payload)
+            }
+            if !options.isEmpty { return .pickEvent("I couldn't find an exact match for “\(name)”. Did you mean one of these?", Array(options.prefix(5))) }
             let what = name.isEmpty ? "any events" : "“\(name)”"
             return .answer("I looked through \(scanned) \(scanned == 1 ? "event" : "events") and none match \(what). Try a word from its title, or tell me the day.")
         case .drafts(let drafts):
             return .plan(ActionPlan(actions: drafts.map { ProposedAction(payload: .deleteEvent($0)) }, transcript: said))
         case .choose(let drafts):
-            return .pickEvent("Which one do you want to delete?", drafts)
+            return .pickEvent("Which one do you want to delete?", drafts.map { .deleteEvent($0) })
         case .tooMany(let n):
             return .answer("That's \(n) events, too many to cancel at once. Try a single day or a name.")
         }

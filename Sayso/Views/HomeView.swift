@@ -28,7 +28,6 @@ struct HomeView: View {
     private var shown: [AgendaItem] { model.day.items(for: filter) }
 
     @State private var askBehind = false
-    @State private var deleting: AgendaItem?
 
     private var plannerRow: some View {
         ScrollView(.horizontal) {
@@ -85,11 +84,9 @@ struct HomeView: View {
                     } else {
                         ForEach(Array(shown.enumerated()), id: \.element.id) { index, item in
                             AgendaCard(item: item, featured: index == 0, stacked: index == 0 && shown.count > 1,
-                                       onDelete: item.eventID == nil ? nil : { deleting = item })
+                                       onDelete: { model.requestDelete(item) })
                                 .contextMenu {
-                                    if item.eventID != nil {
-                                        Button("Delete", systemImage: "trash", role: .destructive) { deleting = item }
-                                    }
+                                    Button("Delete", systemImage: "trash", role: .destructive) { model.requestDelete(item) }
                                 }
                                 .padding(.top, index == 0 && shown.count > 1 ? 20 : 0)
                                 .staggerIn(index)
@@ -108,39 +105,8 @@ struct HomeView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .scrollIndicators(.hidden)
-        .confirmationDialog(deleting.map { "Delete “\($0.title)”?" } ?? "", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }), titleVisibility: .visible, presenting: deleting) { item in
-            if item.recurring {
-                Button("Delete this event only", role: .destructive) { Task { await model.deleteFromHome(item, span: .thisEvent) } }
-                Button("Delete this and all future events", role: .destructive) { Task { await model.deleteFromHome(item, span: .futureEvents) } }
-            } else {
-                Button("Delete", role: .destructive) { Task { await model.deleteFromHome(item, span: .thisEvent) } }
-            }
-            Button("Keep", role: .cancel) {}
-        }
-        .alert("Couldn't do that", isPresented: Binding(get: { model.homeError != nil }, set: { if !$0 { model.homeError = nil } })) {
-            Button("OK", role: .cancel) {}
-        } message: { Text(model.homeError ?? "") }
         .mask(LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.93),
                                      .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom))
-        .overlay(alignment: .bottom) { undoToast }
-        .animation(.smooth, value: model.homeUndo?.id)
-    }
-
-    @ViewBuilder
-    private var undoToast: some View {
-        if let undo = model.homeUndo {
-            HStack(spacing: 12) {
-                Text("Deleted “\(undo.title)”").font(.subheadline.weight(.medium)).foregroundStyle(.black).lineLimit(1)
-                Spacer(minLength: 8)
-                Button("Undo") { Task { await model.undoHomeDelete() } }
-                    .font(.subheadline.weight(.bold)).foregroundStyle(.black)
-            }
-            .padding(.horizontal, 18).padding(.vertical, 13)
-            .background(.white, in: Capsule())
-            .shadow(color: .black.opacity(0.3), radius: 12, y: 4)
-            .padding(.horizontal, 20).padding(.bottom, 8)
-            .transition(.move(edge: .bottom).combined(with: .opacity))
-        }
     }
 
     private var sectionTitle: String {

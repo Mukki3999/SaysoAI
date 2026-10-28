@@ -213,6 +213,13 @@ final class TalkViewModel {
     private func process(_ text: String) async {
         lastUserText = text
         if let step = plannerStep { await handlePlannerAnswer(step, text); return }
+        // "Cancel the dinner" while the dinner is still only a proposal means: drop the proposal.
+        if let pending = pendingProposal, let cmd = EventCommand.parse(text), !cmd.words.isEmpty,
+           pending.actions.contains(where: { a in cmd.words.allSatisfy { a.summary.lowercased().contains($0) } }) {
+            cancel(pending)
+            say("Okay, cancelled that.")
+            return
+        }
         state = .thinking
         thinkingStatus = Self.status(for: text)
         planDay = text.lowercased().contains("tomorrow") ? Calendar.current.date(byAdding: .day, value: 1, to: .now)! : .now
@@ -224,7 +231,7 @@ final class TalkViewModel {
         let started = Date.now
         func ask() async throws -> AgentOutcome {
             try await withTimeout(seconds: 60) {
-                try await agent.respond(to: text, forceMain: hasPending, context: context, routeDeletes: !hasPending)
+                try await agent.respond(to: text, forceMain: hasPending, context: context, routeDeletes: true)
             }
         }
         do {
@@ -258,11 +265,8 @@ final class TalkViewModel {
             append(ChatMessage(role: .assistant, content: .agenda(day, items)))
             state = .idle
             if speakReplies { speaker.speak("\(day) you have \(items.count) \(items.count == 1 ? "thing" : "things").") }
-        case .pickEvent(let q, let drafts):
-            say(q, choices: drafts.map { d in
-                let when = d.before.start.formatted(.dateTime.month(.abbreviated).day().hour().minute())
-                return Choice(label: "\(d.before.title) · \(when)", action: .proposeDelete(d))
-            })
+        case .pickEvent(let q, let options):
+            say(q, choices: options.map { Choice(label: ProposedAction(payload: $0).summary, action: .propose($0)) })
         }
     }
 
@@ -282,6 +286,11 @@ final class TalkViewModel {
         tab = .chat
         append(ChatMessage(role: .user, content: .text(plan.transcript)))
         propose(plan)
+    }
+
+    private var pendingProposal: ActionPlan? {
+        for m in messages.reversed() { if case .proposal(let p) = m.content, p.status == .pending { return p } }
+        return nil
     }
 
     var hasPendingProposal: Bool {
@@ -545,15 +554,32 @@ final class TalkViewModel {
     var homeUndo: HomeUndo?
     var homeError: String?
 
-    /// Today screen: the user tapped Delete and confirmed.
+    /// The item whose delete is waiting for the user's confirmation.
+    var deleting: AgendaItem?
+
+    /// ⋯ on a card. Items Sayso only remembers (no calendar access yet) first need access.
+    func requestDelete(_ item: AgendaItem) {
+        if item.id.hasPrefix("l-") { Task { await connectDay() }; return }
+        deleting = item
+    }
+
+    /// The user tapped Delete and confirmed.
     func deleteFromHome(_ item: AgendaItem, span: EditSpan) async {
-        guard let id = item.eventID, let start = item.start, let end = item.end else { return }
-        let draft = EventDeleteDraft(
-            eventID: id,
-            before: EventSnapshot(title: item.title, start: start, end: end, location: item.detail, isRecurring: item.recurring),
-            span: span)
         do {
-            let outcome = try await EventEditAction.delete(draft)
+            let outcome: ActionResult.Outcome
+            if item.id.hasPrefix("r-") {
+                outcome = try await ReminderDeleteAction.delete(.init(id: String(item.id.dropFirst(2)), title: item.title, due: item.start))
+            } else if item.id.hasPrefix("a-") {
+                guard let id = UUID(uuidString: String(item.id.dropFirst(2))) else { return }
+                try AgendaReader.cancelAlarm(id: id)
+                outcome = .completed(undo: nil)
+            } else if let id = item.eventID, let start = item.start, let end = item.end {
+                let draft = EventDeleteDraft(
+                    eventID: id,
+                    before: EventSnapshot(title: item.title, start: start, end: end, location: item.detail, isRecurring: item.recurring),
+                    span: span)
+                outcome = try await EventEditAction.delete(draft)
+            } else { return }
             if case .completed(let undo?) = outcome {
                 let token = HomeUndo(title: item.title, undo: undo)
                 homeUndo = token
@@ -616,10 +642,10 @@ final class TalkViewModel {
             Task { await handlePlannerAnswer(.behind, "\(m)") }
         case .send(let text):
             Task { await send(text) }
-        case .proposeDelete(let draft):
+        case .propose(let payload):
             clearChoices()
             append(ChatMessage(role: .user, content: .text(choice.label)))
-            propose(ActionPlan(actions: [ProposedAction(payload: .deleteEvent(draft))], transcript: "Delete \(draft.before.title)"))
+            propose(ActionPlan(actions: [ProposedAction(payload: payload)], transcript: choice.label))
         }
     }
 

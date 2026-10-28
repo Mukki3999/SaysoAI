@@ -57,6 +57,20 @@ struct TalkView: View {
             CameraPicker { data in Task { model.receivePhoto(data) } }.ignoresSafeArea()
         }
         .plannerSheets(model)
+        .confirmationDialog(model.deleting.map { "Delete “\($0.title)”?" } ?? "", isPresented: Binding(get: { model.deleting != nil }, set: { if !$0 { model.deleting = nil } }), titleVisibility: .visible, presenting: model.deleting) { item in
+            if item.recurring && item.eventID != nil {
+                Button("Delete this event only", role: .destructive) { Task { await model.deleteFromHome(item, span: .thisEvent) } }
+                Button("Delete this and all future events", role: .destructive) { Task { await model.deleteFromHome(item, span: .futureEvents) } }
+            } else {
+                Button("Delete", role: .destructive) { Task { await model.deleteFromHome(item, span: .thisEvent) } }
+            }
+            Button("Keep", role: .cancel) {}
+        }
+        .alert("Couldn't do that", isPresented: Binding(get: { model.homeError != nil }, set: { if !$0 { model.homeError = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: { Text(model.homeError ?? "") }
+        .overlay(alignment: .bottom) { undoToast.padding(.bottom, 84) }
+        .animation(.smooth, value: model.homeUndo?.id)
         .sheet(isPresented: $showSettings) { SettingsSheet(planner: model.planner) }
         .sheet(item: $model.reviewing) { plan in ConfirmationSheet(model: model, plan: plan) }
         .sheet(item: $model.messageRequest) { request in
@@ -67,6 +81,23 @@ struct TalkView: View {
         }
         .onChange(of: model.mailtoURL) { _, url in
             if let url { openURL(url); model.mailtoURL = nil }
+        }
+    }
+
+    @ViewBuilder
+    private var undoToast: some View {
+        if let undo = model.homeUndo {
+            HStack(spacing: 12) {
+                Text("Deleted “\(undo.title)”").font(.subheadline.weight(.medium)).foregroundStyle(.black).lineLimit(1)
+                Spacer(minLength: 8)
+                Button("Undo") { Task { await model.undoHomeDelete() } }
+                    .font(.subheadline.weight(.bold)).foregroundStyle(.black)
+            }
+            .padding(.horizontal, 18).padding(.vertical, 13)
+            .background(.white, in: Capsule())
+            .shadow(color: .black.opacity(0.3), radius: 12, y: 4)
+            .padding(.horizontal, 20)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
         }
     }
 

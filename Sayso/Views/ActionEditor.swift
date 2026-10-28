@@ -107,7 +107,7 @@ struct ActionEditor: View {
             Section {
                 TextField("Destination", text: bind(d.destination) { d.destination = $0; draft.payload = .directions(d) })
             }
-        case .updateEvent, .deleteEvent:
+        case .updateEvent, .deleteEvent, .deleteReminder:
             EmptyView()   // shown as a diff; changed by asking again
         }
     }

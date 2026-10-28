@@ -34,6 +34,23 @@ enum AgendaReader {
         _ = try? await store.requestFullAccessToReminders()
     }
 
+    /// One entry per repeating event, at its next occurrence in the coming year.
+    static func recurring() async -> [AgendaItem] {
+        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else { return [] }
+        let store = EKEventStore()
+        let start = Calendar.current.startOfDay(for: .now)
+        let end = Calendar.current.date(byAdding: .day, value: 366, to: start)!
+        var seen = Set<String>()
+        return store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: nil))
+            .filter { $0.hasRecurrenceRules && seen.insert($0.saysoKey).inserted }
+            .sorted { $0.startDate < $1.startDate }
+            .map { AgendaItem(id: "e-\($0.saysoKey)-\($0.startDate.timeIntervalSince1970)", kind: .event, title: $0.title ?? "Untitled",
+                              start: $0.startDate, end: $0.endDate, detail: $0.location ?? "", allDay: $0.isAllDay,
+                              eventID: $0.saysoKey, recurring: true) }
+    }
+
+    static func cancelAlarm(id: UUID) throws { try AlarmManager.shared.cancel(id: id) }
+
     static func load(from start: Date, to end: Date) async -> [AgendaItem] {
         let store = EKEventStore()
         var items: [AgendaItem] = []

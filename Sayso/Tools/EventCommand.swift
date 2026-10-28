@@ -125,7 +125,7 @@ struct EventCandidate: Equatable, Sendable {
 
 enum EventMatcher {
     /// One match per event series, using the occurrence the user most likely means.
-    static func match(_ events: [EventCandidate], command: EventCommand, now: Date = .now, calendar cal: Calendar = .current) -> [EventCandidate] {
+    static func match(_ events: [EventCandidate], command: EventCommand, now: Date = .now, calendar cal: Calendar = .current, relaxed: Bool = true) -> [EventCandidate] {
         var pool = events
         if let day = command.day { pool = pool.filter { $0.start < day.end && $0.end > day.start } }
         if let hour = command.hour {
@@ -142,7 +142,7 @@ enum EventMatcher {
             }
             if !strict.isEmpty {
                 scored = strict
-            } else if command.words.count >= 2 {
+            } else if relaxed, command.words.count >= 2 {
                 // Allow one word to miss ("skin care routine" vs "Skincare Routine").
                 scored = pool.compactMap { e in
                     let s = score(e.title, words: command.words)

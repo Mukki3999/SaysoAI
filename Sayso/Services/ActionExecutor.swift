@@ -56,6 +56,7 @@ final class ActionExecutor {
             case .directions(let d): outcome = .ready(.directions(d))
             case .updateEvent(let d): outcome = try await EventEditAction.update(d)
             case .deleteEvent(let d): outcome = try await EventEditAction.delete(d)
+            case .deleteReminder(let d): outcome = try await ReminderDeleteAction.delete(d)
             }
             return ActionResult(action: action, symbol: action.symbol, title: action.card, outcome: outcome)
         } catch {

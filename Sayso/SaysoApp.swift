@@ -60,6 +60,11 @@ struct SaysoApp: App {
                 daily.addRecurrenceRule(EKRecurrenceRule(recurrenceWith: .daily, interval: 1, end: nil))
                 try? store.save(daily, span: .futureEvents)
                 _ = try? await CalendarEventAction.perform(.init(title: "Dentist", start: at(15), end: at(16), location: "Smile Care", notes: ""))
+                _ = try? await store.requestFullAccessToReminders()
+                let r = EKReminder(eventStore: store)
+                r.title = "Night Skincare Routine"; r.calendar = store.defaultCalendarForNewReminders()
+                r.dueDateComponents = cal.dateComponents([.year, .month, .day, .hour, .minute], from: at(23))
+                try? store.save(r, commit: true)
                 await model.refreshDay()
                 if let q = ProcessInfo.processInfo.environment["SAYSO_DEMO_ASK"] { await model.send(q) }
             }

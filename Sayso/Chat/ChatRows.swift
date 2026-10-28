@@ -22,7 +22,7 @@ struct MessageRow: View {
         case (_, .proposal(let plan)):
             ProposalCard(model: model, plan: plan)
         case (_, .agenda(let title, let items)):
-            AgendaListCard(title: title, items: items)
+            AgendaListCard(title: title, items: items) { model.requestDelete($0) }
         case (_, .planCard(let session)):
             PlanCard(model: model, session: session)
         case (_, .error(let text, let needsSettings)):
@@ -371,6 +371,7 @@ struct PlanCard: View {
 struct AgendaListCard: View {
     let title: String
     let items: [AgendaItem]
+    var onDelete: (AgendaItem) -> Void = { _ in }
     @State private var expanded = false
 
     private var shown: [AgendaItem] { expanded ? items : Array(items.prefix(6)) }
@@ -395,6 +396,13 @@ struct AgendaListCard: View {
                         }
                     }
                     Spacer(minLength: 0)
+                    if item.kind != .alarm || item.start != nil {
+                        Button { onDelete(item) } label: {
+                            Image(systemName: "ellipsis").font(.system(size: 13, weight: .bold)).foregroundStyle(.black.opacity(0.6))
+                                .frame(width: 34, height: 28).background(Color.black.opacity(0.06), in: Capsule())
+                        }
+                        .accessibilityLabel("Delete \(item.title)")
+                    }
                 }
                 .padding(.horizontal, 18).padding(.vertical, 9)
             }
@@ -410,6 +418,7 @@ struct AgendaListCard: View {
     }
 
     private func time(_ i: AgendaItem) -> String {
+        if title.hasPrefix("Repeating"), let d = i.start { return d.formatted(.dateTime.month(.abbreviated).day()) }
         if i.allDay { return "All day" }
         return i.start.map { $0.formatted(date: .omitted, time: .shortened) } ?? "Now"
     }
