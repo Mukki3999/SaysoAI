@@ -30,6 +30,11 @@ actor EventDirectory {
     }
 }
 
+extension EKEvent {
+    /// Some calendar accounts hand back no eventIdentifier. The item identifier always exists.
+    var saysoKey: String { eventIdentifier ?? calendarItemIdentifier }
+}
+
 // MARK: - findEvents (read-only)
 
 struct FindEventsTool: Tool {
@@ -67,8 +72,8 @@ struct FindEventsTool: Tool {
         // A repeating event shows up once per occurrence. Offer it once (its next occurrence), or no handle would ever be issued.
         var seen = Set<String>()
         let events = matching.filter { e in
-            guard e.hasRecurrenceRules, let id = e.eventIdentifier else { return true }
-            return seen.insert(id).inserted
+            guard e.hasRecurrenceRules else { return true }
+            return seen.insert(e.saysoKey).inserted
         }
 
         if events.isEmpty { return "No events match. Tell the user nothing was found." }
@@ -80,7 +85,7 @@ struct FindEventsTool: Tool {
         if events.count > 12 {
             return "\(events.count) events match, which is too many to change at once. Ask the user to narrow it down."
         }
-        let handles = await directory.register(events.map { .init(eventID: $0.eventIdentifier ?? "", snapshot: Self.snapshot($0)) })
+        let handles = await directory.register(events.map { .init(eventID: $0.saysoKey, snapshot: Self.snapshot($0)) })
         return zip(handles, lines).map { "\($0): \($1)" }.joined(separator: "\n")
     }
 
@@ -172,7 +177,7 @@ enum EventEditAction {
         let window = store.predicateForEvents(withStart: snapshot.start.addingTimeInterval(-60),
                                               end: snapshot.end.addingTimeInterval(60), calendars: nil)
         let found = store.events(matching: window).first {
-            $0.eventIdentifier == id && abs($0.startDate.timeIntervalSince(snapshot.start)) < 60
+            $0.saysoKey == id && abs($0.startDate.timeIntervalSince(snapshot.start)) < 60
         }
         return found
     }

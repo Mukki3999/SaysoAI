@@ -41,10 +41,10 @@ enum AgendaReader {
         if EKEventStore.authorizationStatus(for: .event) == .fullAccess {
             let events = store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: nil))
             items += events.map {
-                AgendaItem(id: "e-\($0.eventIdentifier ?? $0.title ?? "")-\($0.startDate.timeIntervalSince1970)",
+                AgendaItem(id: "e-\($0.saysoKey)-\($0.startDate.timeIntervalSince1970)",
                            kind: .event, title: $0.title ?? "Untitled", start: $0.startDate, end: $0.endDate,
                            detail: $0.location ?? "", allDay: $0.isAllDay,
-                           eventID: $0.eventIdentifier, recurring: $0.hasRecurrenceRules)
+                           eventID: $0.saysoKey, recurring: $0.hasRecurrenceRules)
             }
         }
         if EKEventStore.authorizationStatus(for: .reminder) == .fullAccess {

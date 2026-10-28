@@ -7,7 +7,8 @@ enum AgentOutcome: Sendable {
     case question(String)   // the model needs one more detail
     case answer(String)     // a reply to a question about the user's day
     case planner(PlannerIntent)   // start Plan my day or Rescue my day
-    case pickEvent(String, [EventDeleteDraft])   // several events fit: the user picks one
+    case pickEvent(String, [EventDeleteDraft])
+    case agenda(day: String, [AgendaItem])   // shown as a list card in the chat   // several events fit: the user picks one
 }
 
 @MainActor @Observable
@@ -74,7 +75,7 @@ final class AgentService {
         if session == nil, label == nil, let quick = QuickParser.parse(transcript) {
             switch quick {
             case .action(let payload): return .plan(ActionPlan(actions: [ProposedAction(payload: payload)], transcript: transcript))
-            case .agenda(let day): return .answer(await Self.agendaAnswer(for: day))
+            case .agenda(let day): return await Self.agendaOutcome(for: day)
             }
         }
         await collector.reset()
@@ -98,7 +99,12 @@ final class AgentService {
                     return try await respond(to: transcript, shownAs: label, forceMain: true, compact: compact, context: context)
                 }
                 // No actions queued: either a clarifying question or an answer about the user's day.
-                let text = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+                var text = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+                // The model sometimes says it did something without calling a tool. Never let that stand.
+                if text.range(of: #"\b(scheduled|i('ve| have)? (added|created|set|booked|scheduled)|has been (added|created|set|scheduled)|reminder for|event for|alarm (is )?set)\b"#,
+                              options: [.regularExpression, .caseInsensitive]) != nil {
+                    text = "I didn't change anything. Tell me what to add, move or delete and I'll set it up for your OK."
+                }
                 if text.hasSuffix("?") { return .question(text) }
                 self.session = nil
                 return .answer(text)
@@ -119,31 +125,25 @@ final class AgentService {
         }
     }
 
-    /// "Tomorrow you have 3 things: …", straight from the calendar.
-    static func agendaAnswer(for day: Date) async -> String {
+    /// The day's calendar, straight from the device, as a list card.
+    static func agendaOutcome(for day: Date) async -> AgentOutcome {
         let cal = Calendar.current
-        let name = cal.isDateInToday(day) ? "today" : cal.isDateInTomorrow(day) ? "tomorrow" : "on " + day.formatted(.dateTime.weekday(.wide))
+        let name = cal.isDateInToday(day) ? "Today" : cal.isDateInTomorrow(day) ? "Tomorrow" : day.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
         guard AgendaReader.access() == .granted else {
-            return "I can't see your calendar yet. Open Today and tap Connect, then ask again."
+            return .answer("I can't see your calendar yet. Open Today and tap Connect, then ask again.")
         }
         let items = await AgendaReader.load(from: day, to: cal.date(byAdding: .day, value: 1, to: day)!)
-        guard !items.isEmpty else { return "Nothing is scheduled \(name). Your day is clear." }
-        let lines = items.prefix(8).map { i -> String in
-            let when = i.allDay ? "All day" : (i.start.map { $0.formatted(date: .omitted, time: .shortened) } ?? "Running")
-            let title = i.kind == .alarm && i.start != nil ? "Alarm" : i.title
-            return "• \(when)  \(title)" + (i.kind == .event && !i.detail.isEmpty ? " (\(i.detail))" : "")
-        }
-        let more = items.count > 8 ? "\n…and \(items.count - 8) more." : ""
-        return "\(name.prefix(1).uppercased() + name.dropFirst()) you have \(items.count) \(items.count == 1 ? "thing" : "things"):\n" + lines.joined(separator: "\n") + more
+        guard !items.isEmpty else { return .answer("Nothing is scheduled \(name.lowercased()). Your day is clear.") }
+        return .agenda(day: name, items)
     }
 
     private func resolveDelete(_ command: EventCommand, said: String) async throws -> AgentOutcome {
         let name = command.words.isEmpty ? "" : command.words.joined(separator: " ")
         switch try await EventLookup.resolve(command) {
-        case .none:
-            let what = name.isEmpty ? "any events" : "an event called “\(name)”"
-            let when = command.day == nil ? "in the next year" : "then"
-            return .answer("I couldn't find \(what) \(when). Check the spelling, or tell me the day.")
+        case .none(let scanned, let near):
+            if !near.isEmpty { return .pickEvent("I couldn't find an exact match for “\(name)”. Did you mean one of these?", near) }
+            let what = name.isEmpty ? "any events" : "“\(name)”"
+            return .answer("I looked through \(scanned) \(scanned == 1 ? "event" : "events") and none match \(what). Try a word from its title, or tell me the day.")
         case .drafts(let drafts):
             return .plan(ActionPlan(actions: drafts.map { ProposedAction(payload: .deleteEvent($0)) }, transcript: said))
         case .choose(let drafts):

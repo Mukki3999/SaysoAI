@@ -164,6 +164,21 @@ enum EventMatcher {
         return picked
     }
 
+    /// Nothing matched every word: the closest events, for "Did you mean…?". At least half the words must be found.
+    static func suggest(_ events: [EventCandidate], command: EventCommand, now: Date = .now) -> [EventCandidate] {
+        guard !command.words.isEmpty else { return [] }
+        var best: [String: (EventCandidate, Double)] = [:]
+        for e in events {
+            let s = score(e.title, words: command.words)
+            guard s >= 0.5 else { continue }
+            if let have = best[e.id] {
+                // Keep the next occurrence of a series.
+                if s > have.1 || (s == have.1 && e.start >= now && (have.0.start < now || e.start < have.0.start)) { best[e.id] = (e, s) }
+            } else { best[e.id] = (e, s) }
+        }
+        return best.values.sorted { $0.1 != $1.1 ? $0.1 > $1.1 : $0.0.start < $1.0.start }.prefix(4).map(\.0)
+    }
+
     /// If one title is exactly what the user said, that is the one they mean.
     static func exact(_ matches: [EventCandidate], command: EventCommand) -> [EventCandidate] {
         guard matches.count > 1, !command.words.isEmpty else { return matches }
