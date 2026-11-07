@@ -121,6 +121,13 @@ final class AgentService {
                 return .answer(text)
             }
             self.session = nil
+            // A question about Sayso itself never produces actions. Don't let the model re-offer an old draft.
+            if label == nil, SmallTalk.asksWhatSaysoCanDo(transcript.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: " .!?,'’"))) {
+                return .answer(SmallTalk.capabilities)
+            }
+            if label == nil, SmallTalk.isPlainQuestion(transcript) {
+                return .answer("I didn't change anything. Tell me what to add, move or delete and I'll set it up for your OK.")
+            }
             return .plan(ActionPlan(actions: actions, transcript: label ?? transcript))
         } catch let error as LanguageModelSession.ToolCallError {
             self.session = nil

@@ -79,6 +79,7 @@
 		F10BA34525B63FFE1025AC74 /* SaysoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6213B894178E7E7AC7EC2BC9 /* SaysoApp.swift */; };
 		F192623799D166BB989F6305 /* ContactPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4E9B1E6191CA36734B64B9 /* ContactPicker.swift */; };
 		F4552F7B25246F2F8FA095D9 /* PreferenceParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9154A4F9E796C58FA5E7284 /* PreferenceParser.swift */; };
+		F92F2BEA16CF3E9DBCFDD2AA /* SmallTalkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09091F9F9E82BBF6370D7266 /* SmallTalkTests.swift */; };
 		FB72A3FDA2B8EA121B321563 /* NeuralVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = F438953BCFB4283E2BB0A88A /* NeuralVoice.swift */; };
 		FC04E1518F03B49FBEFE82F2 /* MenuFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DF749790B73CB9C5F647FC4 /* MenuFilter.swift */; };
 		FC31BD667B86DB127794D81B /* DayPlanSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = E950F3F21F4D1FA1CAAA5783 /* DayPlanSession.swift */; };
@@ -102,6 +103,7 @@
 		04FD602A01B713C15AAB1671 /* DiagnosticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsView.swift; sourceTree = "<group>"; };
 		072B593DCC005BE5073DCBFB /* QuickParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickParserTests.swift; sourceTree = "<group>"; };
 		0808FA54597A0A6111E3694C /* SpeechService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechService.swift; sourceTree = "<group>"; };
+		09091F9F9E82BBF6370D7266 /* SmallTalkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmallTalkTests.swift; sourceTree = "<group>"; };
 		0A5DC6026C2BE995992B8E94 /* Sayso.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Sayso.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0F8C3B02616337512F59B53A /* TalkViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkViewModel.swift; sourceTree = "<group>"; };
 		10520F1093C9142B6BA9F308 /* PlanSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanSheet.swift; sourceTree = "<group>"; };
@@ -291,6 +293,7 @@
 				4C3522F0A8762175265B0CF1 /* RouterTests.swift */,
 				854C81D2A382E7A43D522413 /* SaysoTests.swift */,
 				02CCECB01E2622FEF6F8F714 /* SchedulerTests.swift */,
+				09091F9F9E82BBF6370D7266 /* SmallTalkTests.swift */,
 			);
 			path = SaysoTests;
 			sourceTree = "<group>";
@@ -556,6 +559,7 @@
 				05D6A79BACE9AC4545139728 /* RouterTests.swift in Sources */,
 				3B2C1A83773B3D226D712E27 /* SaysoTests.swift in Sources */,
 				1F3B89F6134141946CE8D7B6 /* SchedulerTests.swift in Sources */,
+				F92F2BEA16CF3E9DBCFDD2AA /* SmallTalkTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -639,7 +643,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = XR95QV2C94;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -724,7 +728,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = XR95QV2C94;
 				ENABLE_NS_ASSERTIONS = NO;
