@@ -77,6 +77,7 @@
 		EA20501678FED884BD6F3816 /* EventLookup.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A54334A17283CE64A3E729 /* EventLookup.swift */; };
 		F022122297EF80EC912921F8 /* StartTimerTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 022667DEF8B571ED352843FF /* StartTimerTool.swift */; };
 		F10BA34525B63FFE1025AC74 /* SaysoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6213B894178E7E7AC7EC2BC9 /* SaysoApp.swift */; };
+		F192623799D166BB989F6305 /* ContactPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4E9B1E6191CA36734B64B9 /* ContactPicker.swift */; };
 		F4552F7B25246F2F8FA095D9 /* PreferenceParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9154A4F9E796C58FA5E7284 /* PreferenceParser.swift */; };
 		FB72A3FDA2B8EA121B321563 /* NeuralVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = F438953BCFB4283E2BB0A88A /* NeuralVoice.swift */; };
 		FC04E1518F03B49FBEFE82F2 /* MenuFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DF749790B73CB9C5F647FC4 /* MenuFilter.swift */; };
@@ -155,6 +156,7 @@
 		C0BED381E3B41CF2E5165167 /* Composer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Composer.swift; sourceTree = "<group>"; };
 		C1F0510269492ADE2E2BE8BA /* SettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSheet.swift; sourceTree = "<group>"; };
 		C29BFB143334536F6B374CFF /* MenuModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuModels.swift; sourceTree = "<group>"; };
+		CC4E9B1E6191CA36734B64B9 /* ContactPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactPicker.swift; sourceTree = "<group>"; };
 		D8485134C850FB968C9063B5 /* ActionPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionPlan.swift; sourceTree = "<group>"; };
 		DF670A268DE7371C5873A5A1 /* OnboardingParts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingParts.swift; sourceTree = "<group>"; };
 		E3A54334A17283CE64A3E729 /* EventLookup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventLookup.swift; sourceTree = "<group>"; };
@@ -265,6 +267,7 @@
 				271D2E832B529526A6FAF220 /* AgendaCard.swift */,
 				4B0D9CB646E471D853A01A5C /* ComposeViews.swift */,
 				03BC46DB9202D226073F5DAA /* ConfirmationSheet.swift */,
+				CC4E9B1E6191CA36734B64B9 /* ContactPicker.swift */,
 				A687073A6223E62AAC834F88 /* DayTimeline.swift */,
 				04FD602A01B713C15AAB1671 /* DiagnosticsView.swift */,
 				5E5BB54FEED08C168C8D3E3A /* HomeView.swift */,
@@ -486,6 +489,7 @@
 				DD03B46BBBA9904D469B042E /* ComposeViews.swift in Sources */,
 				E143F3049505D99B1EF33D2B /* Composer.swift in Sources */,
 				5557685775DEB0DA6B0625AF /* ConfirmationSheet.swift in Sources */,
+				F192623799D166BB989F6305 /* ContactPicker.swift in Sources */,
 				24DCF31A6D73C63B8B052C40 /* ContactsResolver.swift in Sources */,
 				D4A3DE11DA96A678E26E297D /* CreateCalendarEventTool.swift in Sources */,
 				9875627A2F769EAB08B48309 /* CreateReminderTool.swift in Sources */,
@@ -635,7 +639,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 17;
+				CURRENT_PROJECT_VERSION = 18;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = XR95QV2C94;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -720,7 +724,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 17;
+				CURRENT_PROJECT_VERSION = 18;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = XR95QV2C94;
 				ENABLE_NS_ASSERTIONS = NO;

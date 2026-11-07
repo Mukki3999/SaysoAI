@@ -134,6 +134,9 @@ final class SpeechService {
         return transcript
     }
 
+    /// Empties the live text once it has been sent, so the same words are never shown twice.
+    func clearTranscript() { transcript = ""; finalized = ""; volatile = "" }
+
     func cancel() async {
         guard isListening else { return }
         isListening = false

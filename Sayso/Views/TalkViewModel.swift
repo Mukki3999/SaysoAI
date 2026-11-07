@@ -331,7 +331,12 @@ final class TalkViewModel {
     private var pressStart = Date.now
     private var monitorTask: Task<Void, Never>?
 
+    /// A touch sends many "changed" events. Only the first one counts, so the tail of a tap can't start a new recording.
+    private var touchDown = false
+
     func pressBegan() {
+        if touchDown { return }
+        touchDown = true
         // A tap while hands-free listening means "I'm done".
         if state == .listening, handsFree {
             Task { await finishListening() }
@@ -370,6 +375,7 @@ final class TalkViewModel {
     }
 
     func pressEnded() {
+        touchDown = false
         guard pressing else { return }
         pressing = false
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -417,6 +423,7 @@ final class TalkViewModel {
         state = .thinking
         thinkingStatus = "Listening…"
         let text = await speech.stop()
+        speech.clearTranscript()
         state = .idle
         guard text.count > 1 else {
             fail(message: "I didn't catch that. Tap the mic and try again, or type it.")
@@ -530,25 +537,19 @@ final class TalkViewModel {
             do {
                 switch deferred {
                 case .message(let d):
-                    let request = try await MessageAction.prepare(d)
                     guard MFMessageComposeViewController.canSendText() else {
                         throw ToolError("This device can't send text messages.")
                     }
-                    reviewing = nil
-                    messageRequest = request
+                    switch try await ContactsResolver.lookup(d.recipient) {
+                    case .one(let c): complete(ContactChoice(spoken: d.recipient, candidates: [], deferred: deferred), with: c)
+                    case .many(let cs): reviewing = nil; contactChoice = ContactChoice(spoken: d.recipient, candidates: cs, deferred: deferred)
+                    case .none: reviewing = nil; contactChoice = ContactChoice(spoken: d.recipient, candidates: [], deferred: deferred)
+                    }
                 case .email(let d):
-                    let request = try await EmailAction.prepare(d)
-                    reviewing = nil
-                    if MFMailComposeViewController.canSendMail() {
-                        emailRequest = request
-                    } else {
-                        // No Mail account set up: hand the draft to the default mail app. The user still taps Send.
-                        var c = URLComponents()
-                        c.scheme = "mailto"
-                        c.path = request.recipients.joined(separator: ",")
-                        c.queryItems = [URLQueryItem(name: "subject", value: request.subject),
-                                        URLQueryItem(name: "body", value: request.body)]
-                        mailtoURL = c.url
+                    switch try await ContactsResolver.lookup(d.recipient) {
+                    case .one(let c): complete(ContactChoice(spoken: d.recipient, candidates: [], deferred: deferred), with: c)
+                    case .many(let cs): reviewing = nil; contactChoice = ContactChoice(spoken: d.recipient, candidates: cs, deferred: deferred)
+                    case .none: reviewing = nil; contactChoice = ContactChoice(spoken: d.recipient, candidates: [], deferred: deferred)
                     }
                 case .directions(let d):
                     try await DirectionsAction.open(d)
@@ -557,6 +558,48 @@ final class TalkViewModel {
                 guard let i = plan.results?.firstIndex(where: { $0.id == resultID }) else { return }
                 plan.results?[i].outcome = .failed(error.localizedDescription, needsSettings: error is PermissionDenied)
             }
+        }
+    }
+
+    /// Asked when a name matches several people, sounds close to someone, or matches nobody.
+    struct ContactChoice: Identifiable {
+        let id = UUID()
+        let spoken: String
+        let candidates: [ResolvedContact]
+        let deferred: DeferredAction
+
+        var isEmail: Bool { if case .email = deferred { true } else { false } }
+        func label(_ c: ResolvedContact) -> String {
+            let detail = isEmail ? c.email : c.phone
+            return detail.map { "\(c.name) · \($0)" } ?? c.name
+        }
+    }
+    var contactChoice: ContactChoice?
+    var pickingContact: ContactChoice?
+
+    /// A contact is settled: open the Messages or Mail composer with the draft. The user still taps Send.
+    func complete(_ choice: ContactChoice, with c: ResolvedContact) {
+        contactChoice = nil
+        pickingContact = nil
+        switch choice.deferred {
+        case .message(let d):
+            guard let phone = c.phone else { homeError = "\(c.name) has no phone number."; return }
+            reviewing = nil
+            messageRequest = MessageComposeRequest(recipients: [phone], body: d.body)
+        case .email(let d):
+            guard let email = c.email else { homeError = "\(c.name) has no email address."; return }
+            reviewing = nil
+            let request = EmailComposeRequest(recipients: [email], subject: d.subject, body: d.body)
+            if MFMailComposeViewController.canSendMail() {
+                emailRequest = request
+            } else {
+                var url = URLComponents()
+                url.scheme = "mailto"
+                url.path = email
+                url.queryItems = [URLQueryItem(name: "subject", value: request.subject), URLQueryItem(name: "body", value: request.body)]
+                mailtoURL = url.url
+            }
+        case .directions: break
         }
     }
 

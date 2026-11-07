@@ -71,6 +71,20 @@ struct TalkView: View {
         } message: { Text(model.homeError ?? "") }
         .overlay(alignment: .bottom) { undoToast.padding(.bottom, 84) }
         .animation(.smooth, value: model.homeUndo?.id)
+        .confirmationDialog(model.contactChoice.map { $0.candidates.isEmpty ? "I couldn’t find “\($0.spoken)”" : "Which “\($0.spoken)”?" } ?? "",
+                            isPresented: Binding(get: { model.contactChoice != nil }, set: { if !$0 { model.contactChoice = nil } }),
+                            titleVisibility: .visible, presenting: model.contactChoice) { choice in
+            ForEach(choice.candidates) { c in
+                Button(choice.label(c)) { model.complete(choice, with: c) }
+            }
+            Button("Choose from Contacts…") { model.contactChoice = nil; model.pickingContact = choice }
+            Button("Cancel", role: .cancel) {}
+        } message: { choice in
+            Text(choice.candidates.isEmpty ? "Pick them from your contacts." : "Pick who you meant.")
+        }
+        .sheet(item: $model.pickingContact) { choice in
+            ContactPicker(kind: choice.isEmail ? .email : .phone) { model.complete(choice, with: $0) }.ignoresSafeArea()
+        }
         .sheet(isPresented: $showSettings) { SettingsSheet(planner: model.planner) }
         .sheet(item: $model.reviewing) { plan in ConfirmationSheet(model: model, plan: plan) }
         .sheet(item: $model.messageRequest) { request in
