@@ -135,22 +135,26 @@ struct ThinkingRow: View {
         "Connecting the dots", "Rearranging the furniture", "Consulting the stars", "Herding your calendar"
     ]
     @State private var start = Int.random(in: 0..<verbs.count)
+    @State private var shownAt = Date.now
+
+    private func label(_ tick: Int) -> String {
+        let generic = status == "Thinking…" || status == "Listening…"
+        if !generic, Date.now.timeIntervalSince(shownAt) < 2.5 { return status }
+        return Self.verbs[(start + tick) % Self.verbs.count] + "…"
+    }
 
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "sparkle").font(.system(size: 13, weight: .bold)).foregroundStyle(.black)
                 .frame(width: 26, height: 26).background(.white, in: Circle()).symbolEffect(.pulse)
-            if status == "Thinking…" {
-                TimelineView(.periodic(from: .now, by: 2.2)) { context in
-                    let tick = Int(context.date.timeIntervalSinceReferenceDate / 2.2)
-                    Shimmer(text: Self.verbs[(start + tick) % Self.verbs.count] + "…")
-                        .id(tick)
-                        .transition(.opacity)
-                }
-                .animation(.easeInOut(duration: 0.4), value: start)
-            } else {
-                Shimmer(text: status)
+            // Always rotate the verbs. A specific status ("Checking your calendar…") leads, then the verbs take over.
+            TimelineView(.periodic(from: .now, by: 2.2)) { context in
+                let tick = Int(context.date.timeIntervalSinceReferenceDate / 2.2)
+                Shimmer(text: label(tick))
+                    .id(tick)
+                    .transition(.opacity)
             }
+            .animation(.easeInOut(duration: 0.4), value: start)
             Spacer()
             Button("Cancel", action: onCancel).font(.footnote.weight(.semibold)).foregroundStyle(.white.opacity(0.6))
         }

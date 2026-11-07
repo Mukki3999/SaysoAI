@@ -51,8 +51,12 @@ final class SpeechService {
 
     // MARK: Start / stop
 
+    private var starting = false
+
     func start() async throws {
-        guard !isListening else { return }
+        guard !isListening, !starting else { return }
+        starting = true
+        defer { starting = false }
         try await ensurePermissions()
 
         guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: .current) else {

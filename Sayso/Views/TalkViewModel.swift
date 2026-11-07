@@ -79,6 +79,9 @@ final class TalkViewModel {
     private let executor = ActionExecutor()
     private var pressing = false
     private var startTask: Task<Void, Never>?
+    /// True while the microphone is still spinning up. A tap during that window must not start a second session.
+    private var starting = false
+    private var cancelStart = false
 
     var canSend: Bool { state == .idle }
 
@@ -334,6 +337,8 @@ final class TalkViewModel {
             Task { await finishListening() }
             return
         }
+        // Tapped again while the mic is still starting: that means "never mind". Don't open a second session.
+        if starting { cancelStart = true; return }
         guard !pressing, canSend else { return }
         tab = .chat
         pressing = true
@@ -341,12 +346,22 @@ final class TalkViewModel {
         pressStart = .now
         speaker.stop()
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        starting = true
+        cancelStart = false
         startTask = Task {
             do {
                 try await speech.start()
+                starting = false
+                // Only go to "listening" if nothing else took over while the mic started.
+                guard state == .idle, !cancelStart else {
+                    await speech.cancel()
+                    handsFree = false
+                    return
+                }
                 state = .listening
                 startMonitor()
             } catch {
+                starting = false
                 pressing = false
                 handsFree = false
                 fail(error)
