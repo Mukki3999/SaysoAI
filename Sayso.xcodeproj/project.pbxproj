@@ -56,6 +56,7 @@
 		AAC24A1DDAB3FCB8B56CD3CB /* LifeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B8F419C5485764CC747BFC /* LifeStore.swift */; };
 		ADA51ECE3DD692EEF1DCCC66 /* Diagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AFF13D5D53107E44E782785 /* Diagnostics.swift */; };
 		B41047B60AA9FD1ECCA92258 /* MenuTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62EDF7F4C7B92FE26BCBC5A9 /* MenuTests.swift */; };
+		BF2C240416E964D8BFD9A8E2 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 180998D30BE31336C161D25D /* PrivacyInfo.xcprivacy */; };
 		C7E2572A744038E36BD76928 /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F0510269492ADE2E2BE8BA /* SettingsSheet.swift */; };
 		CA59567257075188C3C46B9A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FCA9345A9EBA6BDFF6DB44B5 /* Assets.xcassets */; };
 		CB52BC4AA720D4678B4A4C4E /* OnboardingParts.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF670A268DE7371C5873A5A1 /* OnboardingParts.swift */; };
@@ -108,6 +109,7 @@
 		0A5DC6026C2BE995992B8E94 /* Sayso.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Sayso.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0F8C3B02616337512F59B53A /* TalkViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkViewModel.swift; sourceTree = "<group>"; };
 		10520F1093C9142B6BA9F308 /* PlanSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanSheet.swift; sourceTree = "<group>"; };
+		180998D30BE31336C161D25D /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		1B787A8A98C06F2404759F65 /* AcknowledgementsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AcknowledgementsView.swift; sourceTree = "<group>"; };
 		1DAC3155FFA85EAF79C31F72 /* AgendaReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgendaReader.swift; sourceTree = "<group>"; };
 		271D2E832B529526A6FAF220 /* AgendaCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgendaCard.swift; sourceTree = "<group>"; };
@@ -207,6 +209,7 @@
 			children = (
 				FCA9345A9EBA6BDFF6DB44B5 /* Assets.xcassets */,
 				65D36B466ABCA2CF510F84DE /* Info.plist */,
+				180998D30BE31336C161D25D /* PrivacyInfo.xcprivacy */,
 				6213B894178E7E7AC7EC2BC9 /* SaysoApp.swift */,
 				A27939DBE746CA9E93CE14DE /* Chat */,
 				B4C0194248429E862B6D3137 /* Intents */,
@@ -471,6 +474,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CA59567257075188C3C46B9A /* Assets.xcassets in Resources */,
+				BF2C240416E964D8BFD9A8E2 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -647,7 +651,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 21;
+				CURRENT_PROJECT_VERSION = 22;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = XR95QV2C94;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -732,7 +736,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 21;
+				CURRENT_PROJECT_VERSION = 22;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = XR95QV2C94;
 				ENABLE_NS_ASSERTIONS = NO;
