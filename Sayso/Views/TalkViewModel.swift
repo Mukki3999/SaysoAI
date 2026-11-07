@@ -220,7 +220,7 @@ final class TalkViewModel {
         if let pending = pendingProposal, let cmd = EventCommand.parse(text), !cmd.words.isEmpty,
            pending.actions.contains(where: { a in cmd.words.allSatisfy { a.summary.lowercased().contains($0) } }) {
             cancel(pending)
-            say("Okay, cancelled that.")
+            say(Persona.cancelled())
             return
         }
         state = .thinking
@@ -267,7 +267,7 @@ final class TalkViewModel {
             clearChoices()
             append(ChatMessage(role: .assistant, content: .agenda(day, items)))
             state = .idle
-            if speakReplies { speaker.speak("\(day) you have \(items.count) \(items.count == 1 ? "thing" : "things").") }
+            if speakReplies { speaker.speak(Persona.agenda(day: day, items: items)) }
         case .pickEvent(let q, let options):
             say(q, choices: options.map { Choice(label: ProposedAction(payload: $0).summary, action: .propose($0)) })
         }
@@ -277,8 +277,8 @@ final class TalkViewModel {
     func propose(_ plan: ActionPlan) {
         clearChoices()
         for m in messages { if case .proposal(let old) = m.content, old.status == .pending { old.status = .replaced } }
-        let n = plan.actions.count
-        let lead = n == 1 ? "Got it. Approve it when it looks right." : "Here's what I'll set up. Approve when it looks right."
+        let lead = Persona.lead(for: plan)
+        append(ChatMessage(role: .assistant, content: .text(lead)))
         append(ChatMessage(role: .assistant, content: .proposal(plan)))
         state = .idle
         if speakReplies { speaker.speak(lead) }
@@ -503,6 +503,12 @@ final class TalkViewModel {
         agent.resetConversation()
         Task { await refreshDay() }
         UINotificationFeedbackGenerator().notificationOccurred(.success)
+        if speakReplies {
+            let failed = ran.contains { if case .failed = $0.outcome { true } else { false } }
+            let opensComposer = ran.count == 1 && { if case .ready = ran[0].outcome { true } else { false } }()
+            if opensComposer { speaker.speak(Persona.composerOpening()) }
+            else if !failed { speaker.speak(Persona.done(count: ran.count)) }
+        }
     }
 
     func cancel(_ plan: ActionPlan) {
