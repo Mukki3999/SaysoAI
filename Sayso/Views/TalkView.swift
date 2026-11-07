@@ -71,7 +71,7 @@ struct TalkView: View {
         } message: { Text(model.homeError ?? "") }
         .overlay(alignment: .bottom) { undoToast.padding(.bottom, 84) }
         .animation(.smooth, value: model.homeUndo?.id)
-        .confirmationDialog(model.contactChoice.map { $0.candidates.isEmpty ? "I couldn’t find “\($0.spoken)”" : "Which “\($0.spoken)”?" } ?? "",
+        .confirmationDialog(model.contactChoice.map { $0.candidates.isEmpty ? "I couldn’t find “\($0.spoken)”" : $0.candidates.count == 1 ? "Did you mean \($0.candidates[0].name)?" : "Which “\($0.spoken)”?" } ?? "",
                             isPresented: Binding(get: { model.contactChoice != nil }, set: { if !$0 { model.contactChoice = nil } }),
                             titleVisibility: .visible, presenting: model.contactChoice) { choice in
             ForEach(choice.candidates) { c in
@@ -80,7 +80,7 @@ struct TalkView: View {
             Button("Choose from Contacts…") { model.contactChoice = nil; model.pickingContact = choice }
             Button("Cancel", role: .cancel) {}
         } message: { choice in
-            Text(choice.candidates.isEmpty ? "Pick them from your contacts." : "Pick who you meant.")
+            Text(choice.candidates.isEmpty ? "Pick them from your contacts." : "Sayso never sends on its own. You review the message next.")
         }
         .sheet(item: $model.pickingContact) { choice in
             ContactPicker(kind: choice.isEmail ? .email : .phone) { model.complete(choice, with: $0) }.ignoresSafeArea()
@@ -190,10 +190,10 @@ struct TalkView: View {
                         MessageRow(model: model, message: message).id(message.id)
                     }
                     if model.state == .listening {
-                        ListeningRow(transcript: model.speech.transcript).id("live")
+                        ListeningRow(transcript: model.speech.transcript).id("listening-row")
                     }
                     if model.state == .thinking {
-                        ThinkingRow(status: model.thinkingStatus) { model.cancelThinking() }.id("live")
+                        ThinkingRow(status: model.thinkingStatus) { model.cancelThinking() }.id("thinking-row")
                     }
                     Color.clear.frame(height: 1).id("bottom")
                 }

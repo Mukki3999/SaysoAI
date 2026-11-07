@@ -74,8 +74,8 @@ enum ContactsResolver {
         let matches = try store.unifiedContacts(matching: CNContact.predicateForContacts(matchingName: trimmed), keysToFetch: keys)
         if !matches.isEmpty {
             let exact = matches.filter { CNContactFormatter.string(from: $0, style: .fullName)?.lowercased() == lowered }
+            // Only a full-name match goes straight through. A first name alone is always confirmed.
             if exact.count == 1 { return .one(resolved(exact[0])) }
-            if matches.count == 1 { return .one(resolved(matches[0])) }
             return .many(matches.prefix(6).map(resolved))
         }
 
