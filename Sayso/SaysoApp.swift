@@ -15,15 +15,6 @@ struct SaysoApp: App {
         model.handle(route)
     }
 
-    /// Debug-only: lets the simulator, which has no Apple Intelligence, show the main UI.
-    private static var skipAvailabilityCheck: Bool {
-        #if DEBUG
-        ProcessInfo.processInfo.environment["SAYSO_SKIP_AVAILABILITY"] == "1"
-        #else
-        false
-        #endif
-    }
-
     /// Debug-only: shows the approval sheet in the simulator without the on-device model.
     private static func loadDemoPlanIfRequested(_ model: TalkViewModel) {
         #if DEBUG
@@ -102,9 +93,7 @@ struct SaysoApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-                if !model.agent.isModelAvailable && !Self.skipAvailabilityCheck {
-                    UnsupportedDeviceView(reason: model.agent.unavailableReason, model: model)
-                } else if !hasOnboarded {
+                if !hasOnboarded {
                     OnboardingView { hasOnboarded = true }
                 } else {
                     TalkView(model: model)

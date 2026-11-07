@@ -85,6 +85,10 @@ final class AgentService {
                 return items.isEmpty ? .answer("You have no repeating events in the next year.") : .agenda(day: "Repeating events", items)
             }
         }
+        // Without Apple Intelligence the fast paths above still work; anything else gets a clear, honest answer.
+        guard isModelAvailable else {
+            return .answer("\(unavailableReason)\n\nUntil then I can still set timers, alarms and reminders, show what's on your calendar, and delete events or reminders by name. Try “timer 10 minutes” or “what's on tomorrow”.")
+        }
         await collector.reset()
         if self.session == nil { await directory.reset() }
         // Edits get their own small tool set: the on-device model's context window is small.

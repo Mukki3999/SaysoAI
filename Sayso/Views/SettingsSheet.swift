@@ -9,10 +9,6 @@ struct SettingsSheet: View {
     @State private var removeMessage: String?
     @State private var calendarStatus = EKEventStore.authorizationStatus(for: .event)
 
-    // TODO before submission: replace with your real URLs.
-    private let privacyURL = URL(string: "https://example.com/sayso/privacy")!
-    private let supportURL = URL(string: "https://example.com/sayso/support")!
-
     private var version: String {
         let info = Bundle.main.infoDictionary
         let v = info?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -65,8 +61,10 @@ struct SettingsSheet: View {
                     NavigationLink("Run self-test") { DiagnosticsView() }
                 }
                 Section {
-                    Link("Privacy policy", destination: privacyURL)
-                    Link("Support", destination: supportURL)
+                    Link("Privacy policy", destination: SaysoLinks.privacy)
+                    Link("Terms of service", destination: SaysoLinks.terms)
+                    Link("Support", destination: SaysoLinks.support)
+                    NavigationLink("Acknowledgements") { AcknowledgementsView() }
                 }
                 Section {
                     LabeledContent("Version", value: version)

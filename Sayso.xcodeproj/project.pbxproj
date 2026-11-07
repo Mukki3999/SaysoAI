@@ -16,6 +16,7 @@
 		14B7A4F201EB5554DA14C4E1 /* Scheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD6A86AB47F83ECA07A050C4 /* Scheduler.swift */; };
 		171267645CA2091FB078D08E /* MenuOCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1C46AE386DE7A803D4BF8A6 /* MenuOCRService.swift */; };
 		1F3B89F6134141946CE8D7B6 /* SchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02CCECB01E2622FEF6F8F714 /* SchedulerTests.swift */; };
+		2324CA22BF1759C831D43701 /* AcknowledgementsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B787A8A98C06F2404759F65 /* AcknowledgementsView.swift */; };
 		24DCF31A6D73C63B8B052C40 /* ContactsResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34EBEE58817B8EE734048B29 /* ContactsResolver.swift */; };
 		2EF94ADE701F90FCC1E81809 /* MenuHelperViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6AD5CDC654DDDD1E9F2836 /* MenuHelperViewModel.swift */; };
 		314F8E5A1DD647EE6438AAFC /* ChatModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A625D16F131EDACEB3147920 /* ChatModels.swift */; };
@@ -32,7 +33,6 @@
 		56E0997F190C02E9F441A216 /* AgendaReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DAC3155FFA85EAF79C31F72 /* AgendaReader.swift */; };
 		5A394DE43DF9CA56B5270D86 /* EventCommandTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B82EBEA1D5AD27C2932384A4 /* EventCommandTests.swift */; };
 		644F8A060D59ED253F7E778A /* QuickParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEFD81BE8C0FE98B52926842 /* QuickParser.swift */; };
-		64DF3682F15529AD5E15219A /* UnsupportedDeviceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67447A9939FB1A970452000A /* UnsupportedDeviceView.swift */; };
 		6B41322D57CEA2423230B437 /* ManualPlanForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 445D988C5F1E1030DF2912F1 /* ManualPlanForm.swift */; };
 		6BA5B405325A15FDDA0CDF73 /* ImageTextReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 398EA6E95CB2FD67B7DE1586 /* ImageTextReader.swift */; };
 		6BD9DC001620421A54ADA99C /* EditEventTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59D2FCE0D50A0D124ED109C2 /* EditEventTools.swift */; };
@@ -104,6 +104,7 @@
 		0A5DC6026C2BE995992B8E94 /* Sayso.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Sayso.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0F8C3B02616337512F59B53A /* TalkViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalkViewModel.swift; sourceTree = "<group>"; };
 		10520F1093C9142B6BA9F308 /* PlanSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanSheet.swift; sourceTree = "<group>"; };
+		1B787A8A98C06F2404759F65 /* AcknowledgementsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AcknowledgementsView.swift; sourceTree = "<group>"; };
 		1DAC3155FFA85EAF79C31F72 /* AgendaReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgendaReader.swift; sourceTree = "<group>"; };
 		271D2E832B529526A6FAF220 /* AgendaCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgendaCard.swift; sourceTree = "<group>"; };
 		277685B9B551DD652BB0B065 /* CreateCalendarEventTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateCalendarEventTool.swift; sourceTree = "<group>"; };
@@ -132,7 +133,6 @@
 		6213B894178E7E7AC7EC2BC9 /* SaysoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaysoApp.swift; sourceTree = "<group>"; };
 		62EDF7F4C7B92FE26BCBC5A9 /* MenuTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuTests.swift; sourceTree = "<group>"; };
 		65D36B466ABCA2CF510F84DE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		67447A9939FB1A970452000A /* UnsupportedDeviceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnsupportedDeviceView.swift; sourceTree = "<group>"; };
 		6B76C4360A7C1F3687A41673 /* RemindersAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersAccess.swift; sourceTree = "<group>"; };
 		6CAC0C9C2FD16E7DB0722D3C /* ActionCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionCards.swift; sourceTree = "<group>"; };
 		6DF749790B73CB9C5F647FC4 /* MenuFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuFilter.swift; sourceTree = "<group>"; };
@@ -259,6 +259,7 @@
 		4953604212576D33A6CCDA03 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				1B787A8A98C06F2404759F65 /* AcknowledgementsView.swift */,
 				6CAC0C9C2FD16E7DB0722D3C /* ActionCards.swift */,
 				47A8B932B2E0B58CD324187B /* ActionEditor.swift */,
 				271D2E832B529526A6FAF220 /* AgendaCard.swift */,
@@ -272,7 +273,6 @@
 				C1F0510269492ADE2E2BE8BA /* SettingsSheet.swift */,
 				729DF8E93ED0D35982C85243 /* TalkView.swift */,
 				0F8C3B02616337512F59B53A /* TalkViewModel.swift */,
-				67447A9939FB1A970452000A /* UnsupportedDeviceView.swift */,
 				313F16EFB227DAD1630C6938 /* WaveView.swift */,
 				04B18A88F1BECCF57EC174D8 /* Onboarding */,
 			);
@@ -472,6 +472,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2324CA22BF1759C831D43701 /* AcknowledgementsView.swift in Sources */,
 				E4BF2FB5E2DADFBBFEE0BED8 /* ActionCards.swift in Sources */,
 				A5D34D7D1E0597756396F0F4 /* ActionEditor.swift in Sources */,
 				72B53049BBEBCC136F4134C2 /* ActionExecutor.swift in Sources */,
@@ -537,7 +538,6 @@
 				122246C18E8CF0EF4B4E74AF /* TalkView.swift in Sources */,
 				4A999C20D4BE50CEB5EB251A /* TalkViewModel.swift in Sources */,
 				9186A2E856D5E4306EF44B7E /* Timeout.swift in Sources */,
-				64DF3682F15529AD5E15219A /* UnsupportedDeviceView.swift in Sources */,
 				A96891627B0B4DB5046315A3 /* WaveView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -635,7 +635,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = XR95QV2C94;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -720,7 +720,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = XR95QV2C94;
 				ENABLE_NS_ASSERTIONS = NO;
